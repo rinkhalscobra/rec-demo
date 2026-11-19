@@ -1,0 +1,283 @@
+import { createContext, useContext, useState, useEffect, useMemo, useCallback, type ReactNode } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from './useAuth';
+import type { Json } from '@/integrations/supabase/types';
+import { normalizeBalanceCurrency } from '@/lib/balances';
+import type { CryptoBalance, CryptoBalanceAdjustment } from '@/lib/cryptoBalances';
+
+interface CustomerBalance {
+  id: string;
+  currency: string;
+  balance: number;
+}
+
+interface Profile {
+  id: string;
+  first_name: string | null;
+  last_name: string | null;
+  email: string | null;
+  phone: string | null;
+  preferred_currency: string | null;
+  display_currency: string;
+  case_number: string | null;
+  status: string | null;
+  case_phase: string | null;
+  recovery_search_started_at: string | null;
+  recovery_search_duration_minutes: number;
+  recovery_search_scope: string;
+  recovery_result_type: string | null;
+  recovery_result_details: Json;
+  recovery_completed_at: string | null;
+  assigned_to: string | null;
+  created_at: string | null;
+}
+
+interface Transaction {
+  id: string;
+  type: 'deposit' | 'withdraw';
+  amount: number;
+  currency: string;
+  method: string;
+  status: string;
+  created_at: string;
+  notes: string | null;
+  review_message: string | null;
+}
+
+interface CaseTimelineEvent {
+  id: string;
+  event_type: string;
+  title: string;
+  description: string | null;
+  created_at: string;
+}
+
+interface Notification {
+  id: string;
+  type: string;
+  title: string;
+  message: string | null;
+  is_read: boolean;
+  created_at: string;
+}
+
+type CustomerDataSnapshot = {
+  balances: CustomerBalance[];
+  cryptoBalances: CryptoBalance[];
+  cryptoBalanceAdjustments: CryptoBalanceAdjustment[];
+  profile: Profile | null;
+  transactions: Transaction[];
+  timeline: CaseTimelineEvent[];
+  notifications: Notification[];
+};
+
+// The layout and the active dashboard page both use this hook. Share an in-flight
+// load so mounting them together only issues one set of customer queries.
+const customerDataRequests = new Map<string, Promise<CustomerDataSnapshot>>();
+
+const loadCustomerData = (userId: string): Promise<CustomerDataSnapshot> => {
+  const existingRequest = customerDataRequests.get(userId);
+  if (existingRequest) return existingRequest;
+
+  const request = (async (): Promise<CustomerDataSnapshot> => {
+    const [balanceRes, cryptoBalanceRes, cryptoAdjustmentsRes, profileRes, transactionsRes, timelineRes, notificationsRes] = await Promise.all([
+      supabase.from('customer_balances').select('id, currency, balance').eq('customer_id', userId).order('currency'),
+      supabase.from('portfolio_items').select('id, crypto_id, crypto_name, crypto_symbol, quantity, purchase_price').eq('user_id', userId).order('crypto_symbol'),
+      supabase.from('crypto_balance_adjustments').select('id, adjustment_type, amount, balance_after, crypto_id, crypto_symbol, reason, created_at').eq('customer_id', userId).not('reason', 'is', null).order('created_at', { ascending: false }),
+      supabase.from('profiles').select('id, first_name, last_name, email, phone, preferred_currency, display_currency, case_number, status, case_phase, recovery_search_started_at, recovery_search_duration_minutes, recovery_search_scope, recovery_result_type, recovery_result_details, recovery_completed_at, assigned_to, created_at').eq('id', userId).single(),
+      supabase.from('transaction_requests').select('id, type, amount, currency, method, status, created_at, notes, review_message').eq('customer_id', userId).order('created_at', { ascending: false }),
+      supabase.from('case_timeline').select('id, event_type, title, description, created_at').eq('customer_id', userId).order('created_at', { ascending: false }),
+      supabase.from('notifications').select('id, type, title, message, is_read, created_at').eq('user_id', userId).order('created_at', { ascending: false }),
+    ]);
+
+    return {
+      balances: balanceRes.data || [],
+      cryptoBalances: cryptoBalanceRes.data || [],
+      cryptoBalanceAdjustments: (cryptoAdjustmentsRes.data || []) as CryptoBalanceAdjustment[],
+      profile: profileRes.data,
+      transactions: (transactionsRes.data || []) as Transaction[],
+      timeline: timelineRes.data || [],
+      notifications: notificationsRes.data || [],
+    };
+  })();
+
+  customerDataRequests.set(userId, request);
+  void request.finally(() => {
+    if (customerDataRequests.get(userId) === request) customerDataRequests.delete(userId);
+  }).catch(() => undefined);
+  return request;
+};
+
+const useCustomerDataState = () => {
+  const { user } = useAuth();
+  const userId = user?.id;
+  const [balances, setBalances] = useState<CustomerBalance[]>([]);
+  const [cryptoBalances, setCryptoBalances] = useState<CryptoBalance[]>([]);
+  const [cryptoBalanceAdjustments, setCryptoBalanceAdjustments] = useState<CryptoBalanceAdjustment[]>([]);
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [timeline, setTimeline] = useState<CaseTimelineEvent[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const fetchData = useCallback(async () => {
+    if (!userId) return;
+    
+    try {
+      const snapshot = await loadCustomerData(userId);
+      setBalances(snapshot.balances);
+      setCryptoBalances(snapshot.cryptoBalances);
+      setCryptoBalanceAdjustments(snapshot.cryptoBalanceAdjustments);
+      setProfile(snapshot.profile);
+      setTransactions(snapshot.transactions);
+      setTimeline(snapshot.timeline);
+      setNotifications(snapshot.notifications);
+    } catch (error) {
+      console.error('Error fetching customer data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [userId]);
+
+  useEffect(() => {
+    if (!userId) {
+      setIsLoading(false);
+      return;
+    }
+
+    fetchData();
+
+    // Share one channel across the layout, pages, and forms.
+    const suffix = `${userId}-${Math.random().toString(36).slice(2, 10)}`;
+
+    let subscribed = false;
+    const channel = supabase
+      .channel(`customer-data-${suffix}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications', filter: `user_id=eq.${userId}` }, (payload) => {
+        if (payload.eventType === 'DELETE') {
+          setNotifications(prev => prev.filter(item => item.id !== payload.old.id));
+        } else {
+          const changed = payload.new as Notification;
+          setNotifications(prev => [changed, ...prev.filter(item => item.id !== changed.id)]
+            .sort((a, b) => b.created_at.localeCompare(a.created_at)));
+        }
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'transaction_requests', filter: `customer_id=eq.${userId}` }, (payload) => {
+        if (payload.eventType === 'INSERT') {
+          setTransactions(prev => [payload.new as Transaction, ...prev]);
+        } else if (payload.eventType === 'UPDATE') {
+          setTransactions(prev => prev.map(t => t.id === payload.new.id ? payload.new as Transaction : t));
+        } else if (payload.eventType === 'DELETE') {
+          setTransactions(prev => prev.filter(t => t.id !== payload.old.id));
+        }
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'customer_balances', filter: `customer_id=eq.${userId}` }, (payload) => {
+        if (payload.eventType === 'DELETE') {
+          const removed = payload.old as Pick<CustomerBalance, 'id'>;
+          setBalances((current) => current.filter((balance) => balance.id !== removed.id));
+          return;
+        }
+
+        const changed = payload.new as CustomerBalance;
+        setBalances((current) => {
+          const exists = current.some((balance) => balance.id === changed.id);
+          return exists
+            ? current.map((balance) => balance.id === changed.id ? changed : balance)
+            : [...current, changed].sort((a, b) => a.currency.localeCompare(b.currency));
+        });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'portfolio_items', filter: `user_id=eq.${userId}` }, (payload) => {
+        if (payload.eventType === 'DELETE') {
+          const removed = payload.old as Pick<CryptoBalance, 'id'>;
+          setCryptoBalances((current) => current.filter((balance) => balance.id !== removed.id));
+          return;
+        }
+
+        const changed = payload.new as CryptoBalance;
+        setCryptoBalances((current) => {
+          const exists = current.some((balance) => balance.id === changed.id);
+          return exists
+            ? current.map((balance) => balance.id === changed.id ? changed : balance)
+            : [...current, changed].sort((a, b) => a.crypto_symbol.localeCompare(b.crypto_symbol));
+        });
+      })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'crypto_balance_adjustments', filter: `customer_id=eq.${userId}` }, (payload) => {
+        const adjustment = payload.new as CryptoBalanceAdjustment;
+        if (adjustment.reason) {
+          setCryptoBalanceAdjustments((current) => [adjustment, ...current]);
+        }
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${userId}` }, (payload) => {
+        setProfile(payload.new as Profile);
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'case_timeline', filter: `customer_id=eq.${userId}` }, (payload) => {
+        if (payload.eventType === 'DELETE') {
+          setTimeline(prev => prev.filter(item => item.id !== payload.old.id));
+        } else {
+          const changed = payload.new as CaseTimelineEvent;
+          setTimeline(prev => [changed, ...prev.filter(item => item.id !== changed.id)]
+            .sort((a, b) => b.created_at.localeCompare(a.created_at)));
+        }
+      })
+      .subscribe(status => {
+        if (status === 'SUBSCRIBED') {
+          // Recover any changes missed while the connection was interrupted.
+          if (subscribed) void fetchData();
+          subscribed = true;
+        }
+      });
+
+    const refreshVisibleData = () => {
+      if (document.visibilityState === 'visible') void fetchData();
+    };
+    document.addEventListener('visibilitychange', refreshVisibleData);
+    window.addEventListener('online', refreshVisibleData);
+
+    return () => {
+      document.removeEventListener('visibilitychange', refreshVisibleData);
+      window.removeEventListener('online', refreshVisibleData);
+      void supabase.removeChannel(channel);
+    };
+  }, [userId, fetchData]);
+
+  const markNotificationRead = async (notificationId: string) => {
+    await supabase.from('notifications').update({ is_read: true }).eq('id', notificationId);
+    setNotifications(prev => prev.map(n => n.id === notificationId ? { ...n, is_read: true } : n));
+  };
+
+  const unreadCount = notifications.filter(n => !n.is_read).length;
+  const selectedCurrency = normalizeBalanceCurrency(profile?.preferred_currency || profile?.display_currency);
+  const balance = useMemo(
+    () => balances.find((item) => item.currency.toUpperCase() === selectedCurrency) || balances[0] || null,
+    [balances, selectedCurrency],
+  );
+
+  return {
+    balance,
+    balances,
+    cryptoBalances,
+    cryptoBalanceAdjustments,
+    profile,
+    transactions,
+    timeline,
+    notifications,
+    unreadCount,
+    isLoading,
+    markNotificationRead,
+    refetch: fetchData,
+  };
+};
+
+const CustomerDataContext = createContext<ReturnType<typeof useCustomerDataState> | undefined>(undefined);
+
+// One owner for the entire dashboard, including its layout and nested forms.
+export const CustomerDataProvider = ({ children }: { children: ReactNode }) => {
+  const data = useCustomerDataState();
+  return <CustomerDataContext.Provider value={data}>{children}</CustomerDataContext.Provider>;
+};
+
+export const useCustomerData = () => {
+  const data = useContext(CustomerDataContext);
+  if (!data) throw new Error('useCustomerData must be used within a CustomerDataProvider');
+  return data;
+};

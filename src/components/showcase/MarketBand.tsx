@@ -1,0 +1,94 @@
+import { motion } from "framer-motion";
+import CryptoTicker from "@/components/CryptoTicker";
+import CryptoStats from "@/components/CryptoStats";
+import CryptoChart from "@/components/CryptoChart";
+import CryptoTable from "@/components/CryptoTable";
+import { SectionEyebrow, gradientStyle } from "@/components/showcase/primitives";
+
+const ease = [0.22, 1, 0.36, 1] as const;
+
+const Panel = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => (
+  <div
+    className={`rounded-3xl border border-border bg-secondary backdrop-blur-xl shadow-[0_8px_32px_hsl(0_0%_0%/0.5),inset_0_1px_0_hsl(0_0%_100%/0.06)] overflow-hidden ${className}`}
+  >
+    {children}
+  </div>
+);
+
+const MarketBand = () => {
+  return (
+    <section className="relative w-full px-4 py-16 sm:px-6 md:py-20 lg:px-8">
+      <div className="w-full">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 0.8, ease }}
+          className="mb-10 flex flex-col items-center text-center"
+        >
+          <SectionEyebrow label="Live market" tag="Real time" />
+          <h2 className="showcase-section-title mt-4">
+            <span className="block text-foreground">Live market.</span>
+            <span className="block animate-shiny" style={gradientStyle}>
+              Real signal.
+            </span>
+          </h2>
+          <p className="mt-6 text-muted-foreground max-w-lg text-base leading-[1.5]">
+            Every case starts with the truth on-chain. Track prices, spot momentum, and see the same
+            data our recovery agents work with.
+          </p>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 0.8, ease }}
+        >
+          <Panel className="mb-8">
+            <CryptoTicker />
+          </Panel>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 0.8, ease, delay: 0.05 }}
+          className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8"
+        >
+          <Panel className="p-2">
+            <CryptoChart symbol="BTC/USD" title="Bitcoin (BTC)" />
+          </Panel>
+          <Panel className="p-2">
+            <CryptoChart symbol="ETH/USD" title="Ethereum (ETH)" />
+          </Panel>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 0.8, ease, delay: 0.1 }}
+        >
+          <Panel className="mb-8">
+            <CryptoStats />
+          </Panel>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 0.8, ease, delay: 0.15 }}
+        >
+          <Panel>
+            <CryptoTable />
+          </Panel>
+        </motion.div>
+      </div>
+    </section>
+  );
+};
+
+export default MarketBand;

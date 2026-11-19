@@ -1,0 +1,27 @@
+import { motion } from "framer-motion";
+
+const partners = ["Binance", "Coinbase", "Kraken", "Crypto.com", "Chainalysis", "Elliptic", "Interpol", "Europol"];
+
+const LogoCloud = () => (
+  <section className="relative z-10 w-full px-4 py-12 sm:px-6 md:py-16 lg:px-8">
+    <div className="text-center text-xs uppercase tracking-widest text-muted-foreground">
+      Trusted by partners across the recovery ecosystem
+    </div>
+    <div className="mt-10 grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-6">
+      {partners.map((p, i) => (
+        <motion.div
+          key={p}
+          initial={{ opacity: 0, y: 8 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ delay: i * 0.05, duration: 0.5 }}
+          className="text-sm font-semibold tracking-tight text-muted-foreground hover:text-foreground transition-colors text-center"
+        >
+          {p}
+        </motion.div>
+      ))}
+    </div>
+  </section>
+);
+
+export default LogoCloud;
