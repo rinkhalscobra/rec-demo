@@ -1,6 +1,6 @@
 /** Public corporate identity, checked against Corporations Canada on 2026-09-07. */
 export const COMPANY = {
-  brand: 'Crest Financial',
+  brand: 'Financial Recovery',
   legalName: 'Maple Crest Financial Inc.',
   corporationNumber: '1812368-3',
   businessNumber: '797436847',

@@ -59,7 +59,7 @@ const AppMockup = () => (
           <span className="w-3 h-3 rounded-full bg-secondary" />
           <span className="w-3 h-3 rounded-full bg-secondary" />
         </div>
-        <span className="absolute left-1/2 -translate-x-1/2 text-xs text-muted-foreground">Crest Financial — Case Center</span>
+        <span className="absolute left-1/2 -translate-x-1/2 text-xs text-muted-foreground">Financial Recovery — Case Center</span>
       </div>
 
       <div className="grid grid-cols-12 h-[520px]">
@@ -154,7 +154,7 @@ const AppMockup = () => (
             <div className="liquid-glass rounded-xl p-3 mb-4">
               <div className="flex items-center gap-1.5 mb-1.5">
                 <Sparkles className="w-3.5 h-3.5 text-muted-foreground" />
-                <span className="text-xs font-semibold text-foreground">Summary by Crest Financial AI</span>
+                <span className="text-xs font-semibold text-foreground">Summary by Financial Recovery AI</span>
               </div>
               <p className="text-xs text-muted-foreground leading-relaxed">
                 On-chain trace complete across 3 clusters. Funds routed via a licensed VASP — freeze request filed. Estimated recovery: 68%. No further action required from you.
@@ -171,7 +171,7 @@ const AppMockup = () => (
                 Two of the three receiving wallets were cashed out through a compliant exchange — our freeze request is
                 filed and expected to be processed within 72 hours.
               </p>
-              <p className="text-muted-foreground">— The Crest Financial Team</p>
+              <p className="text-muted-foreground">— The Financial Recovery Team</p>
             </div>
 
             <div className="mt-4 inline-flex items-center gap-2 px-2.5 py-1.5 rounded-md border border-border bg-secondary text-xs text-muted-foreground">

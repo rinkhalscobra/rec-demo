@@ -437,10 +437,10 @@ const messages = {
     'Indagini con uno scopo chiaro.',
   ],
   aboutIntro: [
-    'Crest Financial brings structure to complex digital asset cases: understanding the incident, examining the trail, and documenting what comes next.',
-    'Crest Financial structure les dossiers complexes : comprendre les faits, examiner le parcours des actifs et documenter les étapes suivantes.',
-    'Crest Financial strukturiert komplexe Fälle: Vorfälle verstehen, Spuren untersuchen und nächste Schritte dokumentieren.',
-    'Crest Financial struttura i casi complessi: comprendere gli eventi, analizzare il percorso e documentare i passi successivi.',
+    'Financial Recovery brings structure to complex digital asset cases: understanding the incident, examining the trail, and documenting what comes next.',
+    'Financial Recovery structure les dossiers complexes : comprendre les faits, examiner le parcours des actifs et documenter les étapes suivantes.',
+    'Financial Recovery strukturiert komplexe Fälle: Vorfälle verstehen, Spuren untersuchen und nächste Schritte dokumentieren.',
+    'Financial Recovery struttura i casi complessi: comprendere gli eventi, analizzare il percorso e documentare i passi successivi.',
   ],
   principles: [
     'The principles behind the work',
@@ -524,10 +524,10 @@ const messages = {
     'Il tuo caso. In un unico spazio.',
   ],
   authIntro: [
-    'Access case progress, messages, and your currency balances through your Crest Financial account.',
-    'Accédez à la progression, aux messages et aux soldes en devises dans votre compte Crest Financial.',
-    'Greifen Sie im Crest Financial-Konto auf Fallfortschritt, Nachrichten und Währungsguthaben zu.',
-    'Accedi ad avanzamento, messaggi e saldi in valuta dal tuo account Crest Financial.',
+    'Access case progress, messages, and your currency balances through your Financial Recovery account.',
+    'Accédez à la progression, aux messages et aux soldes en devises dans votre compte Financial Recovery.',
+    'Greifen Sie im Financial Recovery-Konto auf Fallfortschritt, Nachrichten und Währungsguthaben zu.',
+    'Accedi ad avanzamento, messaggi e saldi in valuta dal tuo account Financial Recovery.',
   ],
   notFound: [
     'This page could not be found.',

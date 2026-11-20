@@ -7,9 +7,9 @@ interface LogoProps {
 }
 
 const sizeConfig = {
-  sm: 'w-28 h-10 sm:w-32 sm:h-12',
-  md: 'w-32 h-12 sm:w-44 sm:h-16',
-  lg: 'w-44 h-16 sm:w-52 sm:h-20',
+  sm: 'text-base sm:text-lg',
+  md: 'text-lg sm:text-2xl',
+  lg: 'text-2xl sm:text-3xl',
 };
 
 export const Logo = ({ size = 'md', linkTo = '/' }: LogoProps) => {

@@ -12,7 +12,7 @@ interface WindowChromeProps {
 /**
  * Shared account workspace with a clear title and an opaque content surface.
  */
-export const WindowChrome = ({ title = 'Crest Financial', children, className }: WindowChromeProps) => {
+export const WindowChrome = ({ title = 'Financial Recovery', children, className }: WindowChromeProps) => {
   return (
     <div
       className={cn(

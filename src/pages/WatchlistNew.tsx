@@ -129,7 +129,7 @@ const WatchlistNew = () => {
       <Navigation />
       <main className="pt-8 pb-12">
         <div className="container mx-auto px-4">
-          <div className="flex justify-between items-center mb-8">
+          <div className="mb-8 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
             <div>
               <h1 className="text-4xl font-bold mb-2">{t('crypto.myWatchlist')}</h1>
               <p className="text-muted-foreground">
