@@ -75,7 +75,7 @@ export const CaseStatusCard = ({
             </div>
           ) : (
             <div className="p-2 rounded-full bg-primary/10">
-              <Clock className="h-5 w-5 text-primary animate-pulse" />
+              <Clock className="h-5 w-5 text-primary" />
             </div>
           )}
         </div>
@@ -108,7 +108,7 @@ export const CaseStatusCard = ({
           {/* Connection line */}
           <div className="absolute top-[26px] left-[16.67%] right-[16.67%] h-1 bg-muted rounded-full" />
           <div 
-            className="absolute top-[26px] left-[16.67%] h-1 bg-gradient-to-r from-primary to-primary/70 rounded-full transition-all duration-700 ease-out"
+            className="absolute top-[26px] left-[16.67%] h-1 bg-primary rounded-full"
             style={{ width: `${Math.max(0, (currentStage / (stages.length - 1)) * 66.66)}%` }}
           />
           
@@ -143,7 +143,7 @@ export const CaseStatusCard = ({
                     {isCompleted ? (
                       <CheckCircle className="h-5 w-5" />
                     ) : (
-                      <StageIcon className={cn("h-4 w-4", isCurrent && "animate-pulse")} />
+                      <StageIcon className="h-4 w-4" />
                     )}
                   </div>
                   <span className={cn(

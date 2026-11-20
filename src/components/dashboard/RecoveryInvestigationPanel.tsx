@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   ArrowRight,
-  Activity,
   Bitcoin,
   CheckCircle2,
   Clock3,
@@ -9,7 +8,7 @@ import {
   Hash,
   Landmark,
   MapPin,
-  Radar,
+  Search,
   Route,
   ShieldCheck,
   Wallet,
@@ -18,6 +17,7 @@ import type { Json } from '@/integrations/supabase/types';
 import { cn, formatCurrency } from '@/lib/utils';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
+import { InvestigationWorkflow } from './InvestigationWorkflow';
 
 export interface RecoveryInvestigationData {
   searchStartedAt?: string | null;
@@ -54,53 +54,6 @@ const searchEvents = {
     ['Cross-border network', 'Following intermediary institutions'],
   ],
 };
-
-const riskBuckets = [
-  {
-    name: 'Critical',
-    count: 4,
-    dot: 'bg-red-400',
-    active: 'border-red-400/45 bg-red-50 shadow-[0_0_24px_rgb(248_113_113/0.08)]',
-    items: {
-      both: ['Mixer or obfuscation exposure', 'Sanctions proximity signal'],
-      crypto: ['Mixer output association', 'Sanctioned-address proximity'],
-      bank: ['High-risk routing anomaly', 'Restricted entity proximity'],
-    },
-  },
-  {
-    name: 'Suspicious',
-    count: 7,
-    dot: 'bg-amber-300',
-    active: 'border-amber-300/45 bg-amber-50 shadow-[0_0_24px_rgb(252_211_77/0.08)]',
-    items: {
-      both: ['Cross-network movement', 'Unverified counterparty'],
-      crypto: ['Chain-hopping pattern', 'New wallet counterparty'],
-      bank: ['Beneficiary mismatch signal', 'New intermediary institution'],
-    },
-  },
-  {
-    name: 'Monitoring',
-    count: 18,
-    dot: 'bg-blue-300',
-    active: 'border-blue-300/45 bg-blue-50 shadow-[0_0_24px_rgb(147_197_253/0.08)]',
-    items: {
-      both: ['Dormant destination cluster', 'Low-volume activity'],
-      crypto: ['Dormant wallet endpoint', 'Low-volume wallet cluster'],
-      bank: ['Dormant account reference', 'Low-frequency payment route'],
-    },
-  },
-  {
-    name: 'Cleared',
-    count: 13,
-    dot: 'bg-emerald-400',
-    active: 'border-emerald-400/45 bg-emerald-50 shadow-[0_0_24px_rgb(52_211_153/0.08)]',
-    items: {
-      both: ['Verified regulated service', 'Identity-linked endpoint'],
-      crypto: ['Verified VASP endpoint', 'KYC-linked custody service'],
-      bank: ['Verified banking institution', 'Validated beneficiary record'],
-    },
-  },
-] as const;
 
 const resultLabels: Record<string, string> = {
   amount: 'Identified amount',
@@ -146,104 +99,6 @@ const formatRemaining = (remainingMs: number) => {
   return `${minutes}m remaining`;
 };
 
-const GlobeScanner = ({ scope, activeIndex, running }: { scope: string; activeIndex: number; running: boolean }) => (
-  <div className="relative mx-auto flex h-56 w-56 shrink-0 items-center justify-center sm:h-64 sm:w-64">
-    <div className={cn('absolute inset-0 rounded-full border border-primary/15', running && 'animate-pulse')} />
-    <div className="absolute inset-5 rounded-full border border-primary/20" />
-    <div className={cn('absolute inset-0 rounded-full border border-dashed border-primary/30', running && 'animate-[spin_12s_linear_infinite]')}>
-      <span className="absolute left-1/2 top-[-5px] h-2.5 w-2.5 -translate-x-1/2 rounded-full bg-primary shadow-[0_0_14px_hsl(var(--primary))]" />
-    </div>
-    <div className={cn('absolute inset-3 rounded-full border border-dashed border-emerald-200', running && 'animate-[spin_18s_linear_infinite_reverse]')}>
-      <span className="absolute bottom-3 right-3 h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_12px_rgb(52_211_153)]" />
-    </div>
-    <div className="relative h-40 w-40 overflow-hidden rounded-full border border-primary/50 bg-[radial-gradient(circle_at_35%_30%,hsl(var(--primary)/0.28),hsl(var(--card))_55%,hsl(var(--background)))] shadow-[0_0_45px_hsl(var(--primary)/0.18)] sm:h-44 sm:w-44">
-      <div className={cn('absolute inset-[-25%] bg-[conic-gradient(from_0deg,transparent_0deg,transparent_300deg,hsl(var(--primary)/0.4)_350deg,transparent_360deg)]', running && 'animate-[spin_5s_linear_infinite]')} />
-      <div className="absolute left-1/2 top-0 h-full w-px -translate-x-1/2 bg-primary/20" />
-      <div className="absolute left-[25%] top-0 h-full w-[50%] rounded-[50%] border-x border-primary/20" />
-      <div className="absolute left-0 top-1/2 h-px w-full -translate-y-1/2 bg-primary/20" />
-      <div className="absolute left-0 top-[28%] h-[44%] w-full rounded-[50%] border-y border-primary/20" />
-      {[
-        ['left-[30%] top-[25%]', 'delay-0'],
-        ['right-[24%] top-[42%]', 'delay-300'],
-        ['left-[42%] bottom-[20%]', 'delay-700'],
-      ].map(([position, delay], index) => (
-        <span key={position} className={cn('absolute h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_10px_rgb(52_211_153)]', running && 'animate-ping', position, delay, index !== activeIndex % 3 && 'opacity-50')} />
-      ))}
-    </div>
-    <div className="absolute bottom-0 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-full border border-primary/30 bg-background/90 px-3 py-1.5 text-xs font-medium uppercase tracking-[0.18em] text-primary shadow-lg backdrop-blur">
-      <Radar className="h-3 w-3 animate-pulse" /> {scope === 'both' ? 'Multi-network' : scope}
-    </div>
-  </div>
-);
-
-const RiskClassificationGrid = ({
-  scope,
-  activeIndex,
-  running,
-  scanPosition,
-}: {
-  scope: 'both' | 'bank' | 'crypto';
-  activeIndex: number;
-  running: boolean;
-  scanPosition: number;
-}) => {
-  const sourceLabel = scope === 'both' ? 'bank and blockchain signals' : scope === 'crypto' ? 'wallet signals' : 'banking signals';
-
-  return (
-    <div className="relative overflow-hidden rounded-xl border border-border/80 bg-background/45 p-4 sm:p-5">
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/70 to-transparent" />
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-            <Activity className={cn('h-3.5 w-3.5 text-primary', running && 'animate-pulse')} />
-            Live risk classification
-          </div>
-          <p className="mt-1 text-xs text-muted-foreground">42 {sourceLabel} cross-referenced against recovery intelligence.</p>
-        </div>
-        <Badge variant="outline" className={cn('w-fit border-border bg-background/70 font-mono text-xs', running ? 'text-emerald-800' : 'text-amber-800')}>
-          <span className={cn('mr-1.5 h-1.5 w-1.5 rounded-full', running ? 'animate-pulse bg-emerald-400' : 'bg-amber-400')} />
-          {running ? `Signal ${scanPosition}/42` : 'Classification complete'}
-        </Badge>
-      </div>
-
-      <div className="mt-4 h-1 overflow-hidden rounded-full bg-muted">
-        <div className="h-full rounded-full bg-gradient-to-r from-primary/50 via-primary to-emerald-400 transition-[width] duration-700" style={{ width: `${(scanPosition / 42) * 100}%` }} />
-      </div>
-
-      <div className="mt-4 grid gap-3 sm:grid-cols-2">
-        {riskBuckets.map((bucket, index) => {
-          const isActive = running && activeIndex === index;
-          return (
-            <div key={bucket.name} className={cn('relative overflow-hidden rounded-xl border border-border/75 bg-card/45 p-3.5 transition-all duration-500', isActive && bucket.active)}>
-              {isActive && <div className="pointer-events-none absolute inset-y-0 left-0 w-px animate-pulse bg-current opacity-70" />}
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <span className={cn('h-2 w-2 rounded-full', bucket.dot, isActive && 'animate-ping')} />
-                  <span className="text-sm font-semibold text-foreground">{bucket.name}</span>
-                </div>
-                <span className="font-mono text-xs text-muted-foreground">{bucket.count}</span>
-              </div>
-              <div className="mt-2 space-y-1.5">
-                {bucket.items[scope].map((item) => (
-                  <div key={item} className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <span className="h-1 w-1 shrink-0 rounded-full bg-muted-foreground/60" />
-                    <span className="truncate">{item}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-border/70 pt-3 text-xs text-muted-foreground">
-        <span>{running ? 'Classification updates automatically as the global trace advances.' : 'Classification snapshot retained with the published finding.'}</span>
-        <span className="font-medium text-foreground">Case intelligence · {running ? 'Live' : 'Verified'}</span>
-      </div>
-    </div>
-  );
-};
-
 export const RecoveryInvestigationPanel = ({
   phase,
   searchStartedAt,
@@ -253,92 +108,83 @@ export const RecoveryInvestigationPanel = ({
   resultDetails,
   completedAt,
 }: RecoveryInvestigationPanelProps) => {
-  const [now, setNow] = useState(Date.now());
+  const [now, setNow] = useState(() => Date.now());
   const scope = searchScope === 'bank' || searchScope === 'crypto' ? searchScope : 'both';
-  const events = searchEvents[scope];
-  const activeIndex = Math.floor(now / 2600) % events.length;
   const details = useMemo(() => toDetailRecord(resultDetails), [resultDetails]);
+  const started = searchStartedAt ? Date.parse(searchStartedAt) : NaN;
+  const hasStartTime = Number.isFinite(started);
+  const durationMinutes = searchDurationMinutes && Number.isFinite(searchDurationMinutes) && searchDurationMinutes > 0
+    ? searchDurationMinutes : 4320;
+  const endsAt = started + durationMinutes * 60000;
 
   useEffect(() => {
-    if (phase !== 'review') return undefined;
-    const timer = window.setInterval(() => setNow(Date.now()), 1000);
-    return () => window.clearInterval(timer);
-  }, [phase]);
+    if (phase !== 'review' || !hasStartTime) return;
+    let timer: number | undefined;
+    const refresh = () => {
+      window.clearTimeout(timer);
+      const current = Date.now();
+      setNow(current);
+      // Minute-level time estimates need no animation loop or hidden-tab work.
+      if (document.visibilityState !== 'hidden' && current < endsAt) {
+        timer = window.setTimeout(refresh, Math.min(60000, endsAt - current));
+      }
+    };
+    refresh();
+    document.addEventListener('visibilitychange', refresh);
+    return () => {
+      window.clearTimeout(timer);
+      document.removeEventListener('visibilitychange', refresh);
+    };
+  }, [phase, hasStartTime, endsAt]);
 
   if (phase === 'review') {
-    const started = searchStartedAt ? new Date(searchStartedAt).getTime() : now;
-    const durationMs = Math.max(1, searchDurationMinutes || 4320) * 60000;
-    const elapsed = Math.max(0, now - started);
-    const progress = Math.min(100, (elapsed / durationMs) * 100);
-    const remaining = durationMs - elapsed;
-    const scanPosition = remaining > 0 ? (Math.floor(now / 1000) % 42) + 1 : 42;
+    const progress = hasStartTime ? Math.min(100, Math.max(0, (now - started) / (durationMinutes * 60000) * 100)) : 0;
+    const remaining = endsAt - now;
+    const windowComplete = hasStartTime && remaining <= 0;
+    const scopeLabel = scope === 'both' ? 'Banking and blockchain' : scope === 'bank' ? 'Banking transactions' : 'Blockchain transactions';
 
     return (
-      <div className="overflow-hidden rounded-xl border border-primary/20 bg-[linear-gradient(135deg,hsl(var(--primary)/0.08),transparent_45%),linear-gradient(to_bottom,hsl(var(--card)),hsl(var(--background)/0.75))] p-4 sm:p-6">
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-center">
-          <GlobeScanner scope={scope} activeIndex={activeIndex} running={remaining > 0} />
-          <div className="min-w-0 flex-1 space-y-5">
-            <div>
-              <div className="mb-2 flex flex-wrap items-center gap-2">
-                <Badge className="border-primary/30 bg-primary/10 text-primary hover:bg-primary/10">
-                  <span className={cn('mr-2 h-1.5 w-1.5 rounded-full', remaining > 0 ? 'animate-pulse bg-emerald-400' : 'bg-amber-400')} />
-                  {remaining > 0 ? 'Investigation active' : 'Awaiting publication'}
-                </Badge>
-                <span className="text-xs text-muted-foreground">Case-controlled analysis window</span>
-              </div>
-              <h3 className="text-xl font-semibold tracking-tight">Transaction tracing in progress</h3>
-              <p className="mt-1 text-sm text-muted-foreground">
-                An investigation specialist is reviewing the configured {scope === 'both' ? 'banking and blockchain' : scope} evidence sources.
-              </p>
+      <section aria-label="Case investigation" className="rounded-xl border border-border bg-card">
+        <div className="flex flex-col gap-4 border-b border-border p-4 sm:flex-row sm:items-start sm:justify-between sm:p-6">
+          <div className="flex min-w-0 items-start gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary" aria-hidden="true">
+              <Search className="h-5 w-5" />
             </div>
-
-            <div className="space-y-2">
-              <div className="flex items-center justify-between gap-3 text-xs">
-                <span className="font-medium text-foreground">Investigation window</span>
-                <span className={cn('font-mono', remaining <= 0 ? 'text-amber-800' : 'text-primary')}>{formatRemaining(remaining)}</span>
-              </div>
-              <Progress value={progress} className="h-2" />
-              <div className="flex justify-between text-xs text-muted-foreground">
-                <span>{Math.round(progress)}% elapsed</span>
-                <span>{searchDurationMinutes || 4320} min configured</span>
-              </div>
+            <div className="min-w-0">
+              <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Case investigation</p>
+              <h3 className="text-lg font-semibold tracking-tight text-foreground">{windowComplete ? 'Awaiting analyst verification' : 'Transaction review in progress'}</h3>
+              <p className="mt-1 max-w-2xl text-sm leading-relaxed text-muted-foreground">Your investigation specialist is reviewing the supporting transaction records.</p>
             </div>
+          </div>
+          <Badge variant="outline" className={cn('w-fit shrink-0 gap-1.5', windowComplete ? 'border-amber-200 bg-amber-50 text-amber-800' : 'border-primary/25 bg-primary/5 text-primary')}>
+            <span className={cn('h-1.5 w-1.5 rounded-full', windowComplete ? 'bg-amber-700' : 'bg-primary')} aria-hidden="true" />
+            {windowComplete ? 'Pending verification' : 'Under review'}
+          </Badge>
+        </div>
 
-            <div className="grid gap-2 sm:grid-cols-2">
-              {events.map(([title, description], index) => {
-                const isActive = remaining > 0 && index === activeIndex;
-                return (
-                  <div key={title} className={cn('flex min-w-0 items-center gap-3 rounded-lg border p-3 transition-all duration-500', isActive ? 'border-primary/40 bg-primary/10' : 'border-border/70 bg-background/35 opacity-65')}>
-                    <div className={cn('flex h-8 w-8 shrink-0 items-center justify-center rounded-full', isActive ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground')}>
-                      {title.includes('Bank') || title.includes('Institution') || title.includes('Payment') ? <Landmark className="h-4 w-4" /> : <Bitcoin className="h-4 w-4" />}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="truncate text-xs font-medium">{title}</p>
-                      <p className="truncate text-xs text-muted-foreground">{description}</p>
-                    </div>
-                    {isActive && <span className="ml-auto h-2 w-2 shrink-0 animate-ping rounded-full bg-primary" />}
-                  </div>
-                );
-              })}
-            </div>
-
-            {remaining <= 0 && (
-              <div className="flex gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm">
-                <Clock3 className="mt-0.5 h-4 w-4 shrink-0 text-amber-800" />
-                <p><span className="font-medium text-foreground">Analysis window complete.</span> Findings are awaiting analyst verification before publication.</p>
+        <div className="space-y-5 p-4 sm:p-6">
+          <InvestigationWorkflow sources={searchEvents[scope]} scopeLabel={scopeLabel} running={hasStartTime && !windowComplete} awaitingVerification={windowComplete} />
+          <div className="space-y-3 rounded-lg bg-muted/50 p-4">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                <Clock3 className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+                Investigation window
               </div>
-            )}
+              <span className="text-sm font-medium tabular-nums text-primary">{hasStartTime ? formatRemaining(remaining) : 'Start time pending'}</span>
+            </div>
+            <Progress value={progress} aria-label="Investigation time elapsed" aria-valuetext={hasStartTime ? Math.round(progress) + '% of the review window elapsed' : 'Start time pending'} className="h-1.5 [&>div]:transition-none" />
+            <div className="flex flex-wrap justify-between gap-2 text-xs text-muted-foreground">
+              <span>{Math.round(progress)}% of review window elapsed</span>
+              <span>{scopeLabel}</span>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-2 border-t border-border pt-4 text-xs leading-relaxed text-muted-foreground">
+            <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+            <p>{windowComplete ? 'The review window has ended. Findings are awaiting analyst verification before publication.' : 'This bar shows elapsed review time. Verified findings will be published by your investigation specialist.'}</p>
           </div>
         </div>
-        <div className="mt-6">
-          <RiskClassificationGrid
-            scope={scope}
-            activeIndex={activeIndex}
-            running={remaining > 0}
-            scanPosition={scanPosition}
-          />
-        </div>
-      </div>
+      </section>
     );
   }
 
@@ -391,13 +237,6 @@ export const RecoveryInvestigationPanel = ({
           <ArrowRight className="ml-auto h-4 w-4 text-muted-foreground" />
           <ShieldCheck className="h-5 w-5 text-emerald-800" />
         </div>
-
-        <RiskClassificationGrid
-          scope={scope}
-          activeIndex={0}
-          running={false}
-          scanPosition={42}
-        />
 
         {entries.length > 0 && (
           <dl className="grid gap-3 sm:grid-cols-2">
