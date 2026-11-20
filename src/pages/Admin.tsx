@@ -18,10 +18,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { Users, Shield, UserCog, Trash2, Building2, Ticket, Globe, Copy, FileText, Search, ArrowLeftRight, Loader2 } from 'lucide-react';
+import { Users, Shield, UserCog, Trash2, Ticket, Globe, Copy, FileText, Search, ArrowLeftRight, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { MFASetupDialog } from '@/components/admin/MFASetupDialog';
-import { CreateGroupDialog } from '@/components/admin/CreateGroupDialog';
 import { CreatePromocodeDialog } from '@/components/admin/CreatePromocodeDialog';
 import { CreateIPWhitelistDialog } from '@/components/admin/CreateIPWhitelistDialog';
 import { EditIPWhitelistDialog } from '@/components/admin/EditIPWhitelistDialog';
@@ -71,23 +70,13 @@ const Admin = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const requestedTab = searchParams.get('tab');
   const activeTab: AdminTab = adminTabs.includes(requestedTab as AdminTab) ? requestedTab as AdminTab : 'customers';
-  const { users, userRoles, groups, promocodes, ipWhitelist, ipLogs, loading: loadingData, error: dataError, refresh: fetchData } = useAdminData(user?.id, isAdmin, activeTab);
+  const { users, userRoles, promocodes, ipWhitelist, ipLogs, loading: loadingData, error: dataError, refresh: fetchData } = useAdminData(user?.id, isAdmin, activeTab);
   const [updatingRole, setUpdatingRole] = useState<string | null>(null);
   const [customerSearch, setCustomerSearch] = useState('');
   const deferredCustomerSearch = useDeferredValue(customerSearch);
 
   const roleByUserId = useMemo(() => new Map(userRoles.map((role) => [role.user_id, role.role])), [userRoles]);
-  const groupNameById = useMemo(() => new Map(groups.map((group) => [group.id, group.name])), [groups]);
   const userById = useMemo(() => new Map(users.map((profile) => [profile.id, profile])), [users]);
-  const agentCountByGroupId = useMemo(() => {
-    const counts = new Map<string, number>();
-    users.forEach((profile) => {
-      if (profile.group_id && roleByUserId.get(profile.id) === 'agent') {
-        counts.set(profile.group_id, (counts.get(profile.group_id) || 0) + 1);
-      }
-    });
-    return counts;
-  }, [users, roleByUserId]);
 
   const clientCountByAgentId = useMemo(() => {
     const counts = new Map<string, number>();
@@ -99,10 +88,6 @@ const Admin = () => {
 
   const getUserRole = (userId: string): string => roleByUserId.get(userId) || 'user';
 
-  const getGroupName = (groupId: string | null): string => {
-    if (!groupId) return '-';
-    return groupNameById.get(groupId) || '-';
-  };
 
   const getCreatorName = (creatorId: string | null): string => {
     if (!creatorId) return '-';
@@ -148,16 +133,6 @@ const Admin = () => {
     }
   };
 
-  const handleDeleteGroup = async (groupId: string) => {
-    try {
-      const { error } = await supabase.from('groups').delete().eq('id', groupId);
-      if (error) throw error;
-      toast({ title: t('admin.groupDeleted') });
-      fetchData();
-    } catch (error: unknown) {
-      toast({ title: t('common.error'), description: errorMessage(error), variant: "destructive" });
-    }
-  };
 
   const handleTogglePromocode = async (id: string, isActive: boolean) => {
     try {
@@ -221,11 +196,9 @@ const Admin = () => {
   const agentsPagination = useClientPagination(visibleAgents, '', 25);
   const supervisorsPagination = useClientPagination(visibleSupervisors, '', 25);
   const adminsPagination = useClientPagination(visibleAdmins, '', 25);
-  const groupsPagination = useClientPagination(groups, '', 25);
   const promocodesPagination = useClientPagination(promocodes, '', 25);
   const whitelistPagination = useClientPagination(ipWhitelist, '', 25);
   const logsPagination = useClientPagination(ipLogs, '', 25);
-  const getAgentCount = (groupId: string) => agentCountByGroupId.get(groupId) || 0;
 
   if (!isAdmin) return null;
 
@@ -272,9 +245,6 @@ const Admin = () => {
             <TabsTrigger value="admins" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <Shield className="w-4 h-4 mr-2" /> {t('admin.admins')}
             </TabsTrigger>
-            <TabsTrigger value="groups" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-              <Building2 className="w-4 h-4 mr-2" /> {t('admin.groups')}
-            </TabsTrigger>
             <TabsTrigger value="promocodes" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <Ticket className="w-4 h-4 mr-2" /> {t('admin.promocodes')}
             </TabsTrigger>
@@ -311,8 +281,8 @@ const Admin = () => {
                     className="pl-9 h-9"
                   />
                 </div>
-                <CreateClientDialog groups={groups} onSuccess={fetchData} />
-                <BulkCreateUsersDialog groups={groups} onSuccess={fetchData} />
+                <CreateClientDialog onSuccess={fetchData} />
+                <BulkCreateUsersDialog onSuccess={fetchData} />
               </div>
             </CardHeader>
             <CardContent className="p-0">
@@ -322,7 +292,6 @@ const Admin = () => {
                     <TableHead>{t('admin.fullName')}</TableHead>
                     <TableHead>{t('common.email')}</TableHead>
                     <TableHead>{t('admin.createdBy')}</TableHead>
-                    <TableHead>{t('admin.group')}</TableHead>
                     <TableHead>{t('admin.lastLogin')}</TableHead>
                     <TableHead className="text-right">{t('common.actions')}</TableHead>
                   </TableRow>
@@ -333,7 +302,6 @@ const Admin = () => {
                       <TableCell className="font-medium">{u.first_name || u.last_name ? `${u.first_name || ''} ${u.last_name || ''}`.trim() : 'N/A'}</TableCell>
                       <TableCell className="text-muted-foreground">{u.email || 'N/A'}</TableCell>
                       <TableCell className="text-muted-foreground">{getCreatorName(u.created_by)}</TableCell>
-                      <TableCell>{getGroupName(u.group_id)}</TableCell>
                       <TableCell className="text-muted-foreground">{u.last_login ? new Date(u.last_login).toLocaleString() : '-'}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex gap-2 justify-end">
@@ -357,7 +325,7 @@ const Admin = () => {
                     </TableRow>
                   ))}
                   {visibleCustomers.length === 0 && (
-                    <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">{t('admin.noCustomers')}</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">{t('admin.noCustomers')}</TableCell></TableRow>
                   )}
                 </TableBody>
               </Table>
@@ -374,8 +342,8 @@ const Admin = () => {
                 {t('admin.agents')} <Badge variant="secondary">{visibleAgents.length}</Badge>
               </CardTitle>
               <div className="flex gap-2">
-                <BulkCreateUsersDialog groups={groups} onSuccess={fetchData} />
-                <CreateUserDialog groups={groups} roleType="agent" onSuccess={fetchData} />
+                <BulkCreateUsersDialog onSuccess={fetchData} />
+                <CreateUserDialog roleType="agent" onSuccess={fetchData} />
               </div>
             </CardHeader>
             <CardContent className="p-0">
@@ -387,7 +355,6 @@ const Admin = () => {
                     <TableHead>{t('admin.phone')}</TableHead>
                     <TableHead>{t('admin.birthdate')}</TableHead>
                     <TableHead>{t('common.status')}</TableHead>
-                    <TableHead>{t('admin.group')}</TableHead>
                     <TableHead>{t('admin.assignedClients')}</TableHead>
                     <TableHead className="text-right">{t('common.actions')}</TableHead>
                   </TableRow>
@@ -400,7 +367,6 @@ const Admin = () => {
                       <TableCell className="text-muted-foreground">{u.phone || '-'}</TableCell>
                       <TableCell className="text-muted-foreground">{u.birthdate || '-'}</TableCell>
                       <TableCell><Badge className={`${statusColors[u.status || 'active']} border`}>{(u.status || 'active').toUpperCase()}</Badge></TableCell>
-                      <TableCell>{getGroupName(u.group_id)}</TableCell>
                       <TableCell>
                         <AgentClientsDialog
                           agentId={u.id}
@@ -423,7 +389,7 @@ const Admin = () => {
                     </TableRow>
                   ))}
                   {visibleAgents.length === 0 && (
-                    <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">{t('admin.noAgents')}</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">{t('admin.noAgents')}</TableCell></TableRow>
                   )}
                 </TableBody>
               </Table>
@@ -440,8 +406,8 @@ const Admin = () => {
                 {t('admin.supervisors')} <Badge variant="secondary">{visibleSupervisors.length}</Badge>
               </CardTitle>
               <div className="flex gap-2">
-                <BulkCreateUsersDialog groups={groups} onSuccess={fetchData} />
-                <CreateUserDialog groups={groups} roleType="supervisor" onSuccess={fetchData} />
+                <BulkCreateUsersDialog onSuccess={fetchData} />
+                <CreateUserDialog roleType="supervisor" onSuccess={fetchData} />
               </div>
             </CardHeader>
             <CardContent className="p-0">
@@ -533,48 +499,6 @@ const Admin = () => {
           </Card>}
         </AdminDataPanel>
 
-        {/* Groups Tab */}
-        <AdminDataPanel value="groups" active={activeTab === 'groups'} loading={loadingData} error={dataError} onRetry={fetchData}>
-          {() => <Card className="bg-card border-border">
-            <CardHeader className="border-b border-border flex-row flex-wrap gap-3 items-center justify-between">
-              <CardTitle className="text-foreground flex items-center gap-2">
-                {t('admin.groups')} <Badge variant="secondary">{groups.length}</Badge>
-              </CardTitle>
-              <CreateGroupDialog onSuccess={fetchData} />
-            </CardHeader>
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow className="border-border">
-                    <TableHead>{t('customerDetail.name')}</TableHead>
-                    <TableHead>{t('admin.description')}</TableHead>
-                    <TableHead>{t('admin.agentsCount')}</TableHead>
-                    <TableHead>{t('common.update')}</TableHead>
-                    <TableHead className="text-right">{t('common.actions')}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {groupsPagination.items.map((g) => (
-                    <TableRow key={g.id} className="border-border">
-                      <TableCell className="font-medium">{g.name}</TableCell>
-                      <TableCell className="text-muted-foreground">{g.description || '-'}</TableCell>
-                      <TableCell><Badge variant="secondary">{getAgentCount(g.id)}</Badge></TableCell>
-                      <TableCell className="text-muted-foreground">{g.updated_at ? new Date(g.updated_at).toLocaleDateString() : '-'}</TableCell>
-                      <TableCell className="text-right">
-                        <Button size="sm" variant="destructive" onClick={() => handleDeleteGroup(g.id)}><Trash2 className="h-4 w-4" /></Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  {groups.length === 0 && (
-                    <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">{t('admin.noGroups')}</TableCell></TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </CardContent>
-            <CustomerPagination {...groupsPagination} />
-          </Card>}
-        </AdminDataPanel>
-
         {/* Promocodes Tab */}
         <AdminDataPanel value="promocodes" active={activeTab === 'promocodes'} loading={loadingData} error={dataError} onRetry={fetchData}>
           {() => <Card className="bg-card border-border">
@@ -582,14 +506,13 @@ const Admin = () => {
               <CardTitle className="text-foreground flex items-center gap-2">
                 {t('admin.promocodes')} <Badge variant="secondary">{promocodes.length}</Badge>
               </CardTitle>
-              <CreatePromocodeDialog groups={groups} onSuccess={fetchData} />
+              <CreatePromocodeDialog onSuccess={fetchData} />
             </CardHeader>
             <CardContent className="p-0">
               <Table>
                 <TableHeader>
                   <TableRow className="border-border">
                     <TableHead>{t('admin.code')}</TableHead>
-                    <TableHead>{t('admin.group')}</TableHead>
                     <TableHead>{t('admin.roleType')}</TableHead>
                     <TableHead>{t('admin.timesUsed')}</TableHead>
                     <TableHead>{t('common.status')}</TableHead>
@@ -606,7 +529,6 @@ const Admin = () => {
                           <Copy className="h-3 w-3" />
                         </Button>
                       </TableCell>
-                      <TableCell>{getGroupName(p.group_id)}</TableCell>
                       <TableCell><Badge className={`${roleColors[p.role_type]} border`}>{p.role_type.toUpperCase()}</Badge></TableCell>
                       <TableCell>{p.times_used}{p.usage_limit ? `/${p.usage_limit}` : ''}</TableCell>
                       <TableCell>
@@ -624,7 +546,7 @@ const Admin = () => {
                     </TableRow>
                   ))}
                   {promocodes.length === 0 && (
-                    <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">{t('admin.noPromocodes')}</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">{t('admin.noPromocodes')}</TableCell></TableRow>
                   )}
                 </TableBody>
               </Table>
@@ -640,7 +562,7 @@ const Admin = () => {
               <CardTitle className="text-foreground flex items-center gap-2">
                 {t('admin.ipWhitelist')} <Badge variant="secondary">{ipWhitelist.length}</Badge>
               </CardTitle>
-              <CreateIPWhitelistDialog onSuccess={fetchData} isAdmin={true} />
+              <CreateIPWhitelistDialog onSuccess={fetchData} />
             </CardHeader>
             <IPWhitelistToggle />
             <CardContent className="p-0">
@@ -668,7 +590,7 @@ const Admin = () => {
                       </TableCell>
                       <TableCell className="text-muted-foreground">{ip.created_at ? new Date(ip.created_at).toLocaleDateString() : '-'}</TableCell>
                       <TableCell className="text-right flex gap-2 justify-end">
-                        <EditIPWhitelistDialog entry={ip} onSuccess={fetchData} isAdmin={true} />
+                        <EditIPWhitelistDialog entry={ip} onSuccess={fetchData} />
                         <Button size="sm" variant="destructive" onClick={() => handleDeleteIPRule(ip.id)}><Trash2 className="h-4 w-4" /></Button>
                       </TableCell>
                     </TableRow>

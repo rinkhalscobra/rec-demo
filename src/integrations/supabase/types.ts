@@ -587,7 +587,7 @@ export type Database = {
           created_at?: string | null
           created_by?: string | null
           expires_at?: string | null
-          group_id: string
+          group_id?: string
           id?: string
           is_active?: boolean | null
           role_type?: Database["public"]["Enums"]["app_role"]
@@ -858,6 +858,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_default_group_id: {
+        Args: { _platform?: string }
+        Returns: string
+      }
       adjust_fiat_balance: {
         Args: {
           p_adjustment_type: string

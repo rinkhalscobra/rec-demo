@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -22,16 +21,14 @@ interface IPWhitelistEntry {
 interface EditIPWhitelistDialogProps {
   entry: IPWhitelistEntry;
   onSuccess: () => void;
-  isAdmin?: boolean;
 }
 
-export const EditIPWhitelistDialog = ({ entry, onSuccess, isAdmin = false }: EditIPWhitelistDialogProps) => {
+export const EditIPWhitelistDialog = ({ entry, onSuccess }: EditIPWhitelistDialogProps) => {
   const [open, setOpen] = useState(false);
   const [ipAddress, setIpAddress] = useState(entry.ip_address);
   const [ipVersion, setIpVersion] = useState(entry.ip_version);
   const [action, setAction] = useState(entry.action);
   const [subject, setSubject] = useState(entry.subject);
-  const [isGlobal, setIsGlobal] = useState(entry.group_id === null);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const { t } = useLanguage();
@@ -42,7 +39,6 @@ export const EditIPWhitelistDialog = ({ entry, onSuccess, isAdmin = false }: Edi
       setIpVersion(entry.ip_version);
       setAction(entry.action);
       setSubject(entry.subject);
-      setIsGlobal(entry.group_id === null);
     }
   }, [open, entry]);
 
@@ -58,11 +54,6 @@ export const EditIPWhitelistDialog = ({ entry, onSuccess, isAdmin = false }: Edi
         action: action as any,
         subject: subject,
       };
-
-      // Only admins can toggle global/group-specific
-      if (isAdmin) {
-        updateData.group_id = isGlobal ? null : entry.group_id;
-      }
 
       const { error } = await supabase
         .from('ip_whitelist')
@@ -136,26 +127,11 @@ export const EditIPWhitelistDialog = ({ entry, onSuccess, isAdmin = false }: Edi
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="STAFF">All Staff in Group</SelectItem>
+                <SelectItem value="STAFF">All Staff</SelectItem>
                 <SelectItem value="EVERYONE">Everyone (Legacy)</SelectItem>
               </SelectContent>
             </Select>
           </div>
-          {isAdmin && (
-            <div className="flex items-center justify-between rounded-lg border p-3">
-              <div className="space-y-0.5">
-                <Label htmlFor="global-rule">Global Rule</Label>
-                <p className="text-xs text-muted-foreground">
-                  Applies to all staff from any group
-                </p>
-              </div>
-              <Switch
-                id="global-rule"
-                checked={isGlobal}
-                onCheckedChange={setIsGlobal}
-              />
-            </div>
-          )}
           <Button type="submit" disabled={loading} className="w-full">
             {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
             {t('common.save')}

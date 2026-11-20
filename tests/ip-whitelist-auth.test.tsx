@@ -114,7 +114,7 @@ it('uses the same normalized email for signup and profile metadata', async () =>
   const result = mount(); await flush();
   await act(async () => { await result.current.signUp('  CLIENT@EXAMPLE.COM  ', 'password', 'Client', 'Example'); });
   expect(mock.signUp).toHaveBeenCalledWith({ email: 'client@example.com', password: 'password', options: { data: {
-    first_name: 'Client', last_name: 'Example', group_id: null, platform: 'brightfund', display_email: 'client@example.com',
+    first_name: 'Client', last_name: 'Example', platform: 'brightfund', display_email: 'client@example.com',
   } } });
 });
 

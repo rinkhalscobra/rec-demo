@@ -506,7 +506,8 @@ export const translations = {
     },
     admin: {
       title: "ADMIN DASHBOARD",
-      subtitle: "Manage users, groups, and system settings",
+      subtitle: "Manage users and system settings",
+      workspaceUnavailable: "The workspace could not be loaded. Please refresh or contact an administrator.",
       customers: "Customers",
       agents: "Agents",
       supervisors: "Supervisors",
@@ -519,8 +520,8 @@ export const translations = {
       ipWhitelistOff: "Off",
       ipWhitelistEnabled: "IP whitelist enabled",
       ipWhitelistDisabled: "IP whitelist disabled",
-      ipWhitelistOnDescription: "IP rules apply to staff sign-ins across all groups.",
-      ipWhitelistOffDescription: "All IP restrictions are off for every group. Existing rules are saved for later.",
+      ipWhitelistOnDescription: "IP rules apply to staff sign-ins.",
+      ipWhitelistOffDescription: "All IP restrictions are off. Existing rules are saved for later.",
       ipWhitelistLoadError: "Could not load the IP whitelist setting.",
       ipWhitelistSaveError: "Could not save the IP whitelist setting. Please try again.",
       retryIPWhitelist: "Retry",
@@ -572,7 +573,7 @@ export const translations = {
       action: "Action",
       subject: "Subject",
       emailExists: "Email already registered",
-      emailExistsDesc: "This email is already registered in Supabase Auth, even if it is not visible in this group or platform. Use a different email, or have a global admin move/delete the existing account.",
+      emailExistsDesc: "An account with this email already exists. Please use a different email.",
       createClient: "Create Client",
       createClientDesc: "Create a new client account. They will receive login credentials.",
       autoGenerateCaseNumber: "Auto-generate case number",
@@ -594,12 +595,12 @@ export const translations = {
       passwordResetRejected: "Password reset request has been rejected",
     },
     groupAdmin: {
-      title: "GROUP ADMIN DASHBOARD",
+      title: "ADMIN DASHBOARD",
       subtitle: "Manage your office",
       myOffice: "My Office",
       noGroupAssigned: "No group assigned",
       contactSuperAdmin: "Contact the super admin to be assigned to a group",
-      cannotPromoteToAdmin: "You cannot promote users to admin or group admin",
+      cannotPromoteToAdmin: "You cannot promote users to administrator",
       roleUpdatedTo: "Role updated to",
       bulkAssign: "Bulk Assign",
       bulkAssignTitle: "Bulk Assign Agents to Supervisor",
@@ -728,6 +729,20 @@ export const translations = {
       assignToGroup: "Assign to Group",
       selectGroup: "Select group",
       noteInvite: "Note: To invite users, create a promocode for this group and share it with them.",
+
+      createAgent: "Create Agent",
+
+      createSupervisor: "Create Supervisor",
+
+      directAccountNote: "Create a staff account that can sign in with this email and password.",
+
+      accountCreated: "Account created",
+
+      accountCreatedDesc: "The staff account is ready to sign in.",
+
+      accountCreationFailed: "Account creation failed. Please try again.",
+
+      noGroupsForAccount: "Create a group first, then assign the new staff account to it.",
       bulkCreate: "BULK CREATE",
       bulkCreateTitle: "Bulk Create Demo Users",
       numberOfUsers: "Number of Users",
@@ -1498,7 +1513,8 @@ export const translations = {
     },
     admin: {
       title: "TABLEAU DE BORD ADMIN",
-      subtitle: "Gérer les utilisateurs, groupes et paramètres système",
+      subtitle: "Gérer les utilisateurs et les paramètres système",
+      workspaceUnavailable: "Impossible de charger l’espace de travail. Actualisez la page ou contactez un administrateur.",
       customers: "Clients",
       agents: "Agents",
       supervisors: "Superviseurs",
@@ -1511,8 +1527,8 @@ export const translations = {
       ipWhitelistOff: "Désactivée",
       ipWhitelistEnabled: "Liste blanche IP activée",
       ipWhitelistDisabled: "Liste blanche IP désactivée",
-      ipWhitelistOnDescription: "Les règles IP s’appliquent aux connexions du personnel de tous les groupes.",
-      ipWhitelistOffDescription: "Toutes les restrictions IP sont désactivées pour tous les groupes. Les règles existantes sont conservées.",
+      ipWhitelistOnDescription: "Les règles IP s’appliquent aux connexions du personnel.",
+      ipWhitelistOffDescription: "Toutes les restrictions IP sont désactivées. Les règles existantes sont conservées.",
       ipWhitelistLoadError: "Impossible de charger le paramètre de la liste blanche IP.",
       ipWhitelistSaveError: "Impossible d’enregistrer le paramètre de la liste blanche IP. Veuillez réessayer.",
       retryIPWhitelist: "Réessayer",
@@ -1564,7 +1580,7 @@ export const translations = {
       action: "Action",
       subject: "Sujet",
       emailExists: "E-mail déjà enregistré",
-      emailExistsDesc: "Cet e-mail est déjà enregistré dans Supabase Auth, même s'il n'est pas visible dans ce groupe ou cette plateforme. Utilisez un autre e-mail, ou demandez à un administrateur global de déplacer/supprimer le compte existant.",
+      emailExistsDesc: "Un compte avec cet e-mail existe déjà. Veuillez utiliser un autre e-mail.",
       createClient: "Créer un client",
       createClientDesc: "Créer un nouveau compte client. Il recevra ses identifiants de connexion.",
       autoGenerateCaseNumber: "Générer automatiquement le numéro de dossier",
@@ -1586,12 +1602,12 @@ export const translations = {
       passwordResetRejected: "La demande de réinitialisation a été rejetée",
     },
     groupAdmin: {
-      title: "TABLEAU DE BORD ADMIN GROUPE",
+      title: "TABLEAU DE BORD ADMIN",
       subtitle: "Gérer votre bureau",
       myOffice: "Mon Bureau",
       noGroupAssigned: "Aucun groupe attribué",
       contactSuperAdmin: "Contactez le super admin pour être attribué à un groupe",
-      cannotPromoteToAdmin: "Vous ne pouvez pas promouvoir les utilisateurs en admin ou admin de groupe",
+      cannotPromoteToAdmin: "Vous ne pouvez pas promouvoir les utilisateurs au rôle d’administrateur",
       roleUpdatedTo: "Rôle mis à jour vers",
       bulkAssign: "Attribution en masse",
       bulkAssignTitle: "Attribuer des agents à un superviseur en masse",
@@ -1713,6 +1729,20 @@ export const translations = {
       assignToGroup: "Assigner au groupe",
       selectGroup: "Sélectionner un groupe",
       noteInvite: "Note : Pour inviter des utilisateurs, créez un code promo pour ce groupe et partagez-le avec eux.",
+
+      createAgent: "Cr?er un agent",
+
+      createSupervisor: "Cr?er un superviseur",
+
+      directAccountNote: "Cr?ez un compte qui pourra se connecter avec cet e-mail et ce mot de passe.",
+
+      accountCreated: "Compte cr??",
+
+      accountCreatedDesc: "Le compte du collaborateur peut maintenant se connecter.",
+
+      accountCreationFailed: "La cr?ation du compte a ?chou?. Veuillez r?essayer.",
+
+      noGroupsForAccount: "Cr?ez d?abord un groupe, puis affectez-y le nouveau compte.",
       bulkCreate: "CRÉATION EN MASSE",
       bulkCreateTitle: "Créer des utilisateurs démo en masse",
       numberOfUsers: "Nombre d'utilisateurs",
@@ -2480,7 +2510,8 @@ export const translations = {
     },
     admin: {
       title: "ADMIN-DASHBOARD",
-      subtitle: "Benutzer, Gruppen und Systemeinstellungen verwalten",
+      subtitle: "Benutzer und Systemeinstellungen verwalten",
+      workspaceUnavailable: "Der Arbeitsbereich konnte nicht geladen werden. Laden Sie die Seite neu oder kontaktieren Sie einen Administrator.",
       customers: "Kunden",
       agents: "Agenten",
       supervisors: "Supervisoren",
@@ -2493,8 +2524,8 @@ export const translations = {
       ipWhitelistOff: "Aus",
       ipWhitelistEnabled: "IP-Whitelist aktiviert",
       ipWhitelistDisabled: "IP-Whitelist deaktiviert",
-      ipWhitelistOnDescription: "IP-Regeln gelten für Mitarbeiteranmeldungen in allen Gruppen.",
-      ipWhitelistOffDescription: "Alle IP-Beschränkungen sind für alle Gruppen ausgeschaltet. Bestehende Regeln bleiben gespeichert.",
+      ipWhitelistOnDescription: "IP-Regeln gelten für Mitarbeiteranmeldungen.",
+      ipWhitelistOffDescription: "Alle IP-Beschränkungen sind ausgeschaltet. Bestehende Regeln bleiben gespeichert.",
       ipWhitelistLoadError: "Die IP-Whitelist-Einstellung konnte nicht geladen werden.",
       ipWhitelistSaveError: "Die IP-Whitelist-Einstellung konnte nicht gespeichert werden. Bitte erneut versuchen.",
       retryIPWhitelist: "Erneut versuchen",
@@ -2546,7 +2577,7 @@ export const translations = {
       action: "Aktion",
       subject: "Betreff",
       emailExists: "E-Mail bereits registriert",
-      emailExistsDesc: "Diese E-Mail ist bereits in Supabase Auth registriert, auch wenn sie in dieser Gruppe oder Plattform nicht sichtbar ist. Verwenden Sie eine andere E-Mail oder lassen Sie den bestehenden Account von einem globalen Admin verschieben/löschen.",
+      emailExistsDesc: "Ein Konto mit dieser E-Mail existiert bereits. Bitte verwenden Sie eine andere E-Mail.",
       createClient: "Kunde erstellen",
       createClientDesc: "Erstellen Sie ein neues Kundenkonto. Der Kunde erhält seine Anmeldedaten.",
       autoGenerateCaseNumber: "Fallnummer automatisch generieren",
@@ -2568,12 +2599,12 @@ export const translations = {
       passwordResetRejected: "Die Zurücksetzungsanfrage wurde abgelehnt",
     },
     groupAdmin: {
-      title: "GRUPPENADMIN-DASHBOARD",
+      title: "ADMIN-DASHBOARD",
       subtitle: "Verwalten Sie Ihr Büro",
       myOffice: "Mein Büro",
       noGroupAssigned: "Keine Gruppe zugewiesen",
       contactSuperAdmin: "Wenden Sie sich an den Super-Admin, um einer Gruppe zugewiesen zu werden",
-      cannotPromoteToAdmin: "Sie können Benutzer nicht zum Admin oder Gruppenadmin befördern",
+      cannotPromoteToAdmin: "Sie können Benutzer nicht zum Administrator befördern",
       roleUpdatedTo: "Rolle aktualisiert zu",
       bulkAssign: "Massenassignieren",
       bulkAssignTitle: "Agenten in Masse einem Supervisor zuweisen",
@@ -2695,6 +2726,20 @@ export const translations = {
       assignToGroup: "Gruppe zuweisen",
       selectGroup: "Gruppe auswählen",
       noteInvite: "Hinweis: Um Benutzer einzuladen, erstellen Sie einen Promo-Code für diese Gruppe und teilen Sie ihn.",
+
+      createAgent: "Agent erstellen",
+
+      createSupervisor: "Supervisor erstellen",
+
+      directAccountNote: "Erstellen Sie ein Mitarbeiterkonto mit dieser E-Mail-Adresse und diesem Passwort.",
+
+      accountCreated: "Konto erstellt",
+
+      accountCreatedDesc: "Das Mitarbeiterkonto kann sich jetzt anmelden.",
+
+      accountCreationFailed: "Das Konto konnte nicht erstellt werden. Bitte versuchen Sie es erneut.",
+
+      noGroupsForAccount: "Erstellen Sie zuerst eine Gruppe und weisen Sie ihr das neue Konto zu.",
       bulkCreate: "MASSENERSTELLUNG",
       bulkCreateTitle: "Demo-Benutzer massenweise erstellen",
       numberOfUsers: "Anzahl der Benutzer",
@@ -3462,7 +3507,8 @@ export const translations = {
     },
     admin: {
       title: "DASHBOARD ADMIN",
-      subtitle: "Gestisci utenti, gruppi e impostazioni di sistema",
+      subtitle: "Gestisci utenti e impostazioni di sistema",
+      workspaceUnavailable: "Impossibile caricare lo spazio di lavoro. Aggiorna la pagina o contatta un amministratore.",
       customers: "Clienti",
       agents: "Agenti",
       supervisors: "Supervisori",
@@ -3475,8 +3521,8 @@ export const translations = {
       ipWhitelistOff: "Disattiva",
       ipWhitelistEnabled: "Whitelist IP attivata",
       ipWhitelistDisabled: "Whitelist IP disattivata",
-      ipWhitelistOnDescription: "Le regole IP si applicano agli accessi del personale di tutti i gruppi.",
-      ipWhitelistOffDescription: "Tutte le restrizioni IP sono disattivate per tutti i gruppi. Le regole esistenti vengono conservate.",
+      ipWhitelistOnDescription: "Le regole IP si applicano agli accessi del personale.",
+      ipWhitelistOffDescription: "Tutte le restrizioni IP sono disattivate. Le regole esistenti vengono conservate.",
       ipWhitelistLoadError: "Impossibile caricare l’impostazione della whitelist IP.",
       ipWhitelistSaveError: "Impossibile salvare l’impostazione della whitelist IP. Riprova.",
       retryIPWhitelist: "Riprova",
@@ -3528,7 +3574,7 @@ export const translations = {
       action: "Azione",
       subject: "Soggetto",
       emailExists: "Email già registrata",
-      emailExistsDesc: "Questa email è già registrata in Supabase Auth, anche se non è visibile in questo gruppo o piattaforma. Usa un'altra email oppure chiedi a un admin globale di spostare/eliminare l'account esistente.",
+      emailExistsDesc: "Esiste già un account con questa email. Usa un'altra email.",
       createClient: "Crea cliente",
       createClientDesc: "Crea un nuovo account cliente. Riceverà le credenziali di accesso.",
       autoGenerateCaseNumber: "Genera automaticamente il numero del caso",
@@ -3550,12 +3596,12 @@ export const translations = {
       passwordResetRejected: "La richiesta di reimpostazione è stata rifiutata",
     },
     groupAdmin: {
-      title: "DASHBOARD ADMIN GRUPPO",
+      title: "DASHBOARD ADMIN",
       subtitle: "Gestisci il tuo ufficio",
       myOffice: "Il Mio Ufficio",
       noGroupAssigned: "Nessun gruppo assegnato",
       contactSuperAdmin: "Contatta il super admin per essere assegnato a un gruppo",
-      cannotPromoteToAdmin: "Non puoi promuovere utenti ad admin o admin di gruppo",
+      cannotPromoteToAdmin: "Non puoi promuovere utenti ad amministratore",
       roleUpdatedTo: "Ruolo aggiornato a",
       bulkAssign: "Assegnazione in blocco",
       bulkAssignTitle: "Assegna agenti a un supervisore in blocco",
@@ -3677,6 +3723,20 @@ export const translations = {
       assignToGroup: "Assegna al Gruppo",
       selectGroup: "Seleziona gruppo",
       noteInvite: "Nota: Per invitare utenti, crea un codice promo per questo gruppo e condividilo.",
+
+      createAgent: "Crea agente",
+
+      createSupervisor: "Crea supervisore",
+
+      directAccountNote: "Crea un account che potr? accedere con questa email e questa password.",
+
+      accountCreated: "Account creato",
+
+      accountCreatedDesc: "L?account del collaboratore ? pronto per accedere.",
+
+      accountCreationFailed: "Creazione dell?account non riuscita. Riprova.",
+
+      noGroupsForAccount: "Crea prima un gruppo, quindi assegna il nuovo account al gruppo.",
       bulkCreate: "CREAZIONE MASSIVA",
       bulkCreateTitle: "Crea Utenti Demo in Massa",
       numberOfUsers: "Numero di Utenti",

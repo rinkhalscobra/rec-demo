@@ -2,7 +2,7 @@ import { useCallback, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
-export const adminTabs = ['customers', 'transactions', 'agents', 'supervisors', 'admins', 'groups', 'promocodes', 'ip-whitelist', 'ip-audit'] as const;
+export const adminTabs = ['customers', 'transactions', 'agents', 'supervisors', 'admins', 'promocodes', 'ip-whitelist', 'ip-audit'] as const;
 export type AdminTab = typeof adminTabs[number];
 
 // Keep cached sections within this page's lifetime, and scope every read to the account.

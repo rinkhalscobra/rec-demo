@@ -158,8 +158,8 @@ const GroupAdmin = () => {
 
       if (!myProfile?.group_id) {
         toast({
-          title: t('groupAdmin.noGroupAssigned'),
-          description: t('groupAdmin.contactSuperAdmin'),
+          title: t('common.error'),
+          description: t('admin.workspaceUnavailable'),
           variant: "destructive"
         });
         setLoadingData(false);
@@ -443,14 +443,12 @@ const GroupAdmin = () => {
     suspended: 'bg-red-50 text-red-800 border-red-200'
   };
 
-  const groups = myGroup ? [myGroup] : [];
 
   return (
     <StaffDashboardLayout
       role="group_admin"
       title={t('groupAdmin.title')}
       subtitle={t('groupAdmin.subtitle')}
-      groupName={myGroup?.name}
       onRefresh={handleRefresh}
       isLoading={loadingData}
       headerActions={
@@ -458,7 +456,6 @@ const GroupAdmin = () => {
           <MFASetupDialog />
           {myGroup && (
             <CreateClientDialog
-              defaultGroupId={myGroup.id}
               onSuccess={fetchData}
             />
           )}
@@ -475,7 +472,7 @@ const GroupAdmin = () => {
       {!myGroup ? (
         <Card className="bg-card border-border">
           <CardContent className="py-12 text-center">
-            <p className="text-muted-foreground">{t('groupAdmin.noGroupAssigned')}</p>
+            <p className="text-muted-foreground">{t('admin.workspaceUnavailable')}</p>
           </CardContent>
         </Card>
       ) : (
@@ -613,7 +610,7 @@ const GroupAdmin = () => {
                     }))}
                     onSuccess={fetchData}
                   />
-                  <CreateUserDialog groups={groups} roleType="agent" onSuccess={fetchData} />
+                  <CreateUserDialog roleType="agent" onSuccess={fetchData} />
                 </div>
               </CardHeader>
               <CardContent className="p-0">
@@ -678,7 +675,7 @@ const GroupAdmin = () => {
                 <CardTitle className="text-foreground flex items-center gap-2">
                   {t('admin.supervisors')} <Badge variant="secondary">{filterUsersByRole('supervisor').length}</Badge>
                 </CardTitle>
-                <CreateUserDialog groups={groups} roleType="supervisor" onSuccess={fetchData} />
+                <CreateUserDialog roleType="supervisor" onSuccess={fetchData} />
               </CardHeader>
               <CardContent className="p-0">
                 <div className="overflow-x-auto">
@@ -734,7 +731,7 @@ const GroupAdmin = () => {
                 <CardTitle className="text-foreground flex items-center gap-2">
                   {t('admin.promocodes')} <Badge variant="secondary">{promocodes.length}</Badge>
                 </CardTitle>
-                <CreatePromocodeDialog groups={groups} onSuccess={fetchData} />
+                <CreatePromocodeDialog onSuccess={fetchData} />
               </CardHeader>
               <CardContent className="p-0">
                 <div className="overflow-x-auto">
@@ -791,7 +788,7 @@ const GroupAdmin = () => {
                 <CardTitle className="text-foreground flex items-center gap-2">
                   {t('admin.ipWhitelist')} <Badge variant="secondary">{ipWhitelist.length}</Badge>
                 </CardTitle>
-                {myGroup && <CreateIPWhitelistDialog onSuccess={fetchData} groupId={myGroup.id} />}
+                {myGroup && <CreateIPWhitelistDialog onSuccess={fetchData} />}
               </CardHeader>
               <CardContent className="p-0">
                 <div className="overflow-x-auto">
@@ -840,7 +837,7 @@ const GroupAdmin = () => {
                   Staff Sessions <Badge variant="secondary">{staffSessions.length}</Badge>
                 </CardTitle>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Monitor login activity for staff members in your group
+                  Monitor login activity for staff members
                 </p>
               </CardHeader>
               <CardContent className="p-0">

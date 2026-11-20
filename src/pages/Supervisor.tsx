@@ -96,8 +96,8 @@ const Supervisor = () => {
 
       if (!myProfile?.group_id) {
         toast({
-          title: t('supervisor.noGroupAssigned').split('.')[0],
-          description: t('supervisor.noGroupAssigned'),
+          title: t('common.error'),
+          description: t('admin.workspaceUnavailable'),
           variant: "destructive"
         });
         setLoadingData(false);
@@ -229,13 +229,11 @@ const Supervisor = () => {
     <StaffDashboardLayout
       role="supervisor"
       title={t('supervisor.title')}
-      groupName={myGroup?.name}
       onRefresh={handleRefresh}
       isLoading={loadingData}
       headerActions={
         myGroup && (
           <CreateClientDialog
-            defaultGroupId={myGroup.id}
             onSuccess={fetchData}
           />
         )
@@ -251,7 +249,7 @@ const Supervisor = () => {
       {!myGroup ? (
         <Card className="bg-card border-border">
           <CardContent className="py-12 text-center">
-            <p className="text-muted-foreground">{t('supervisor.noGroupAssigned')}</p>
+            <p className="text-muted-foreground">{t('admin.workspaceUnavailable')}</p>
           </CardContent>
         </Card>
       ) : (
@@ -274,7 +272,7 @@ const Supervisor = () => {
               <CardHeader className="border-b border-border">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <CardTitle className="text-foreground flex items-center gap-2">
-                    {t('supervisor.customersInGroup')} {myGroup.name}
+                    {t('admin.customers')}
                     <Badge variant="secondary">{visibleCustomers.length}</Badge>
                   </CardTitle>
                   <div className="relative w-full sm:w-64">
@@ -361,7 +359,7 @@ const Supervisor = () => {
                       {visibleCustomers.length === 0 && (
                         <TableRow>
                           <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                            {t('supervisor.noCustomersInGroup')}
+                            {t('admin.noCustomers')}
                           </TableCell>
                         </TableRow>
                       )}
@@ -378,7 +376,7 @@ const Supervisor = () => {
             <Card className="bg-card border-border">
               <CardHeader className="border-b border-border">
                 <CardTitle className="text-foreground flex items-center gap-2">
-                  {t('supervisor.agentsInGroup')} {myGroup.name}
+                  {t('admin.agents')}
                   <Badge variant="secondary">{filterUsersByRole('agent').length}</Badge>
                 </CardTitle>
               </CardHeader>
@@ -448,7 +446,7 @@ const Supervisor = () => {
                       {filterUsersByRole('agent').length === 0 && (
                         <TableRow>
                           <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                            {t('supervisor.noAgentsInGroup')}
+                            {t('admin.noAgents')}
                           </TableCell>
                         </TableRow>
                       )}

@@ -2,11 +2,10 @@ import { ReactNode, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
-import { useLanguage } from '@/contexts/LanguageContext';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Building2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { PullToRefresh } from '@/components/ui/pull-to-refresh';
 import { WindowChrome } from '@/components/dashboard/WindowChrome';
 
@@ -16,7 +15,6 @@ interface StaffDashboardLayoutProps {
   children: ReactNode;
   title: string;
   subtitle?: string;
-  groupName?: string | null;
   headerActions?: ReactNode;
   onRefresh?: () => Promise<void>;
   isLoading?: boolean;
@@ -29,7 +27,7 @@ const roleConfig = {
   },
   group_admin: {
     color: 'bg-purple-50 text-purple-800 border-purple-200',
-    label: 'Group Admin',
+    label: 'Administrator',
   },
   supervisor: {
     color: 'bg-yellow-50 text-yellow-800 border-yellow-200',
@@ -46,7 +44,6 @@ export const StaffDashboardLayout = ({
   children,
   title,
   subtitle,
-  groupName,
   headerActions,
   onRefresh,
   isLoading = false,
@@ -54,7 +51,6 @@ export const StaffDashboardLayout = ({
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const { role: userRole, isLoading: roleLoading } = useUserRole();
-  const { t } = useLanguage();
 
   const handleRefresh = useCallback(async () => {
     if (onRefresh) {
@@ -108,14 +104,6 @@ export const StaffDashboardLayout = ({
                 </div>
                 {subtitle && (
                   <p className="text-muted-foreground text-sm sm:text-base">{subtitle}</p>
-                )}
-                {groupName && (
-                  <div className="flex items-center gap-2 text-muted-foreground text-sm mt-1">
-                    <Building2 className="h-4 w-4 flex-shrink-0" />
-                    <span className="truncate">
-                      {t('supervisor.managingGroup')}: <span className="text-primary font-medium">{groupName}</span>
-                    </span>
-                  </div>
                 )}
               </div>
               {headerActions && (

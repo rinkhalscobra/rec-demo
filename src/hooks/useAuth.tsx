@@ -79,7 +79,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const signUp = async (email: string, password: string, firstName: string, lastName: string, promocode?: string) => {
     email = email.trim().toLowerCase();
     try {
-      let groupId: string | null = null;
       let roleType: AppRole | null = null;
       let promocodeId: string | null = null;
 
@@ -123,7 +122,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           return { error: new Error("Promocode limit reached"), session: null };
         }
 
-        groupId = codeData.group_id;
         roleType = codeData.role_type;
         promocodeId = codeData.id;
       }
@@ -135,7 +133,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           data: {
             first_name: firstName,
             last_name: lastName,
-            group_id: groupId,
             platform: 'brightfund',
             display_email: email,
           }
@@ -157,12 +154,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       // If signup successful and we have a promocode, update the profile and increment usage
       if (data.user && promocodeId) {
-        // Update profile with group_id
-        await supabase
-          .from('profiles')
-          .update({ group_id: groupId })
-          .eq('id', data.user.id);
-
         // Create user role if not 'user'
         if (roleType && roleType !== 'user') {
           await supabase

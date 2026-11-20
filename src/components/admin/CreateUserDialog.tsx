@@ -1,84 +1,107 @@
-import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { useId, useState } from 'react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Plus, Loader2 } from 'lucide-react';
 
-interface Group {
-  id: string;
-  name: string;
-}
-
 interface CreateUserDialogProps {
-  groups: Group[];
   roleType: 'agent' | 'supervisor';
   onSuccess: () => void;
 }
 
-export const CreateUserDialog = ({ groups, roleType, onSuccess }: CreateUserDialogProps) => {
+export const CreateUserDialog = ({ roleType, onSuccess }: CreateUserDialogProps) => {
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [username, setUsername] = useState('');
   const [phone, setPhone] = useState('');
-  const [groupId, setGroupId] = useState('');
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const { t } = useLanguage();
+  const id = useId();
+
+  const resetForm = () => {
+    setEmail(''); setPassword(''); setFirstName(''); setLastName('');
+    setUsername(''); setPhone('');
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim()) return;
+    if (loading || !email.trim() || password.length < 6) return;
 
     setLoading(true);
     try {
-      toast({ 
-        title: "Note", 
-        description: `${t('dialogs.noteInvite')} ${groups.find(g => g.id === groupId)?.name} - ${email}`,
+      const { data, error } = await supabase.functions.invoke('create-user', {
+        body: {
+          email: email.trim().toLowerCase(), password,
+          firstName: firstName.trim(), lastName: lastName.trim(),
+          username: username.trim(), phone: phone.trim(),
+          role: roleType,
+        },
       });
-      
+
+      if (error) {
+        let message = error.message;
+        if (error.context instanceof Response) {
+          try { message = (await error.context.json()).error || message; } catch { /* Use the SDK message. */ }
+        }
+        throw new Error(message);
+      }
+      if (data?.error) throw new Error(data.error);
+      if (!data?.success || !data.userId) throw new Error(t('dialogs.accountCreationFailed'));
+
+      toast({ title: t('dialogs.accountCreated'), description: t('dialogs.accountCreatedDesc') });
       setOpen(false);
-    } catch (error: any) {
-      toast({ title: t('common.error'), description: error.message, variant: "destructive" });
+      resetForm();
+      onSuccess();
+    } catch (error: unknown) {
+      toast({ title: t('common.error'), description: error instanceof Error ? error.message : t('dialogs.accountCreationFailed'), variant: "destructive" });
     } finally {
       setLoading(false);
     }
   };
 
-  const roleLabel = roleType === 'agent' ? t('admin.agents') : t('admin.supervisors');
+  const title = roleType === 'agent' ? t('dialogs.createAgent') : t('dialogs.createSupervisor');
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={next => {
+      if (loading) return;
+      setOpen(next);
+      if (!next) resetForm();
+    }}>
       <DialogTrigger asChild>
         <Button size="sm" className="gap-2">
           <Plus className="h-4 w-4" /> {t('common.create').toUpperCase()}
         </Button>
       </DialogTrigger>
-      <DialogContent className="bg-card border-border">
+      <DialogContent className="max-h-[90dvh] overflow-y-auto bg-card border-border">
         <DialogHeader>
-          <DialogTitle>{t('dialogs.createUser')} {roleLabel}</DialogTitle>
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>{t('dialogs.directAccountNote')}</DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4" aria-busy={loading}>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="firstName">{t('auth.firstName')}</Label>
+              <Label htmlFor={`${id}-firstName`}>{t('auth.firstName')}</Label>
               <Input
-                id="firstName"
+                id={`${id}-firstName`}
+                disabled={loading}
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
                 placeholder="John"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="lastName">{t('auth.lastName')}</Label>
+              <Label htmlFor={`${id}-lastName`}>{t('auth.lastName')}</Label>
               <Input
-                id="lastName"
+                id={`${id}-lastName`}
+                disabled={loading}
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
                 placeholder="Doe"
@@ -86,9 +109,10 @@ export const CreateUserDialog = ({ groups, roleType, onSuccess }: CreateUserDial
             </div>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="email">{t('auth.email')}</Label>
+            <Label htmlFor={`${id}-email`}>{t('auth.email')}</Label>
             <Input
-              id="email"
+              id={`${id}-email`}
+              disabled={loading}
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -96,45 +120,45 @@ export const CreateUserDialog = ({ groups, roleType, onSuccess }: CreateUserDial
               required
             />
           </div>
+          <div className="space-y-2">
+            <Label htmlFor={`${id}-password`}>{t('auth.password')}</Label>
+            <Input
+              id={`${id}-password`}
+              type="password"
+              autoComplete="new-password"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              minLength={6}
+              disabled={loading}
+              required
+            />
+          </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="username">{t('admin.username')}</Label>
+              <Label htmlFor={`${id}-username`}>{t('admin.username')}</Label>
               <Input
-                id="username"
+                id={`${id}-username`}
+                disabled={loading}
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="johndoe"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="phone">{t('common.phone')}</Label>
+              <Label htmlFor={`${id}-phone`}>{t('common.phone')}</Label>
               <Input
-                id="phone"
+                id={`${id}-phone`}
+                type="tel"
+                disabled={loading}
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="+1234567890"
               />
             </div>
           </div>
-          <div className="space-y-2">
-            <Label>{t('dialogs.assignToGroup')}</Label>
-            <Select value={groupId} onValueChange={setGroupId} required>
-              <SelectTrigger>
-                <SelectValue placeholder={t('dialogs.selectGroup')} />
-              </SelectTrigger>
-              <SelectContent>
-                {groups.map((group) => (
-                  <SelectItem key={group.id} value={group.id}>{group.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            {t('dialogs.noteInvite')}
-          </p>
-          <Button type="submit" disabled={loading || !groupId} className="w-full">
+          <Button type="submit" disabled={loading || !email.trim() || password.length < 6} className="w-full">
             {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-            {t('common.create')} {roleLabel}
+            {loading ? t('dialogs.creating') : title}
           </Button>
         </form>
       </DialogContent>

@@ -15,7 +15,6 @@ vi.mock('@/hooks/useAdmin', () => ({ useAdmin: () => ({ isAdmin: true }) }));
 vi.mock('@/integrations/supabase/client', () => ({ supabase: { from: mock.from, channel: mock.channel, removeChannel: mock.removeChannel } }));
 vi.mock('@/components/dashboard/StaffDashboardLayout', () => ({ StaffDashboardLayout: ({ children, onRefresh }: { children: ReactNode; onRefresh: () => void }) => <main><button onClick={onRefresh}>Refresh dashboard</button>{children}</main> }));
 vi.mock('@/components/admin/MFASetupDialog', () => ({ MFASetupDialog: () => null }));
-vi.mock('@/components/admin/CreateGroupDialog', () => ({ CreateGroupDialog: () => null }));
 vi.mock('@/components/admin/CreatePromocodeDialog', () => ({ CreatePromocodeDialog: () => null }));
 vi.mock('@/components/admin/CreateIPWhitelistDialog', () => ({ CreateIPWhitelistDialog: () => null }));
 vi.mock('@/components/admin/EditIPWhitelistDialog', () => ({ EditIPWhitelistDialog: () => null }));
@@ -82,6 +81,15 @@ beforeEach(() => {
 });
 
 describe('admin section navigation', () => {
+  it('removes group management and opens customers for an old groups bookmark', async () => {
+    mountPage('/admin?tab=groups'); await flush();
+    const tabs = [...document.querySelectorAll('[role="tab"]')];
+    expect(tabs.map(tab => tab.textContent?.trim())).not.toContain('Groups');
+    expect(tabs.find(tab => tab.getAttribute('data-state') === 'active')?.textContent?.trim()).toBe('Customers');
+    expect([...document.querySelectorAll('th')].map(cell => cell.textContent)).not.toContain('Group');
+    expect(document.body.textContent).not.toContain('Create Group');
+  });
+
   it('shows customers immediately without mounting transactions or fetching optional sections', async () => {
     mountPage();
     await flush();
@@ -167,7 +175,7 @@ describe('admin section navigation', () => {
     mountPage('/admin?tab=promocodes');
     await flush(); await flush();
     expect(document.querySelector('[role="alert"]')?.textContent).toContain('Promocodes unavailable');
-    expect(document.querySelectorAll('[role="tab"]')).toHaveLength(9);
+    expect(document.querySelectorAll('[role="tab"]')).toHaveLength(8);
     delete mock.failures.promocodes;
     act(() => button('Retry').click());
     await flush();

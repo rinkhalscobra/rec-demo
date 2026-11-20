@@ -70,7 +70,7 @@ serve(async (req) => {
         .single(),
       supabaseAdmin
         .from("profiles")
-        .select("platform")
+        .select("platform, group_id")
         .eq("id", requestingUser.id)
         .single(),
     ]);
@@ -91,12 +91,16 @@ serve(async (req) => {
     }
 
     // Get request body
-    const { email: rawEmail, password, firstName, lastName, role, groupId, createdBy, assignedTo } = await req.json();
+    const { email: rawEmail, password, firstName, lastName, username, phone, role, createdBy, assignedTo } = await req.json();
     const email = typeof rawEmail === "string" ? rawEmail.trim().toLowerCase() : "";
 
-    if (!email || !password || !role || !groupId) {
-      throw new Error("Missing required fields: email, password, role, groupId");
+    if (!email || !password || !role) {
+      throw new Error("Missing required fields: email, password, role");
     }
+
+    // The application has one workspace. Never require a group choice from a caller.
+    const { data: groupId, error: workspaceError } = await supabaseAdmin.rpc('get_default_group_id', { _platform: creatorPlatform });
+    if (workspaceError || !groupId) throw new Error('Could not load the workspace. Please try again.');
 
     // Validate role permissions
     // Admins can create any role except admin through bulk
@@ -113,28 +117,16 @@ serve(async (req) => {
         throw new Error("Supervisors can only create agents or clients");
       }
       // Verify supervisor is in the same group
-      const { data: supervisorProfile } = await supabaseAdmin
-        .from("profiles")
-        .select("group_id")
-        .eq("id", requestingUser.id)
-        .single();
-      
-      if (supervisorProfile?.group_id !== groupId) {
-        throw new Error("Supervisors can only create users in their own group");
+      if (creatorProfile?.group_id !== groupId) {
+        throw new Error("This account is not assigned to the workspace");
       }
     } else if (isGroupAdmin) {
       if (!["supervisor", "agent", "user"].includes(role)) {
         throw new Error("Group admins can only create supervisors, agents, or clients");
       }
       // Verify group admin is in the same group
-      const { data: groupAdminProfile } = await supabaseAdmin
-        .from("profiles")
-        .select("group_id")
-        .eq("id", requestingUser.id)
-        .single();
-      
-      if (groupAdminProfile?.group_id !== groupId) {
-        throw new Error("Group admins can only create users in their own group");
+      if (creatorProfile?.group_id !== groupId) {
+        throw new Error("This account is not assigned to the workspace");
       }
     } else if (isAdmin) {
       if (!["group_admin", "supervisor", "agent", "user"].includes(role)) {
@@ -142,18 +134,7 @@ serve(async (req) => {
       }
     }
 
-    // Determine target platform from the group's tag (falls back to creator).
-    let targetPlatform = creatorPlatform;
-    const { data: targetGroup } = await supabaseAdmin
-      .from("groups")
-      .select("name, platform")
-      .eq("id", groupId)
-      .maybeSingle();
-    if (targetGroup?.platform) {
-      targetPlatform = targetGroup.platform;
-    } else if (targetGroup?.name && /^zyra/i.test(targetGroup.name)) {
-      targetPlatform = "brightfund";
-    }
+    const targetPlatform = creatorPlatform;
     // One account per email across every platform and role, including archived
     // profiles. Never manufacture an aliased address for a second account.
     const [emailMatch, displayEmailMatch] = await Promise.all([
@@ -239,6 +220,8 @@ serve(async (req) => {
         created_by: createdBy || requestingUser.id,
         first_name: firstName,
         last_name: lastName,
+        username: typeof username === 'string' ? username.trim() || null : null,
+        phone: typeof phone === 'string' ? phone.trim() || null : null,
         assigned_to: finalAssignedTo || null,
         platform: targetPlatform,
         email: email,
@@ -248,7 +231,9 @@ serve(async (req) => {
 
     if (profileError) {
       console.error("Error updating profile:", profileError);
-      // Don't throw, user is already created
+      const { error: cleanupError } = await supabaseAdmin.auth.admin.deleteUser(userId);
+      if (cleanupError) throw new Error('Account setup failed and could not be rolled back. Please contact an administrator.');
+      throw new Error(`Account was not created: ${profileError.message}`);
     }
 
     // Create the user role (skip for regular users as they have no entry in user_roles)
@@ -262,7 +247,9 @@ serve(async (req) => {
 
       if (roleInsertError) {
         console.error("Error inserting role:", roleInsertError);
-        throw new Error(`User created but failed to assign role: ${roleInsertError.message}`);
+        const { error: cleanupError } = await supabaseAdmin.auth.admin.deleteUser(userId);
+        if (cleanupError) throw new Error('Role assignment failed and could not be rolled back. Please contact an administrator.');
+        throw new Error(`Account was not created: ${roleInsertError.message}`);
       }
     }
 

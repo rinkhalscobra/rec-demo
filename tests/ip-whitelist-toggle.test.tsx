@@ -42,7 +42,7 @@ it('persists disabling and re-enabling without touching existing rules', async (
   await flush();
   expect(mock.updates).toEqual([{ enabled: false }]);
   expect(toggle.getAttribute('aria-checked')).toBe('false');
-  expect(document.body.textContent).toContain('All IP restrictions are off for every group');
+  expect(document.body.textContent).toContain('All IP restrictions are off.');
   act(() => toggle.click());
   await flush();
   expect(mock.updates).toEqual([{ enabled: false }, { enabled: true }]);

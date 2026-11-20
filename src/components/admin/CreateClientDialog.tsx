@@ -11,13 +11,6 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
@@ -40,22 +33,13 @@ const getFunctionErrorMessage = async (error: unknown) => {
   return error instanceof Error ? error.message : 'Failed to create client';
 };
 
-interface Group {
-  id: string;
-  name: string;
-}
-
 interface CreateClientDialogProps {
-  groups?: Group[];
-  defaultGroupId?: string | null;
   defaultAssignedTo?: string | null;
   onSuccess?: () => void;
   children?: React.ReactNode;
 }
 
 export const CreateClientDialog = ({
-  groups = [],
-  defaultGroupId,
   defaultAssignedTo,
   onSuccess,
   children,
@@ -73,7 +57,6 @@ export const CreateClientDialog = ({
     lastName: '',
     phone: '',
     caseNumber: '',
-    groupId: defaultGroupId || '',
     assignedTo: defaultAssignedTo || '',
   });
 
@@ -89,12 +72,7 @@ export const CreateClientDialog = ({
     setIsLoading(true);
 
     try {
-      const groupId = formData.groupId || defaultGroupId;
       const assignedTo = formData.assignedTo || defaultAssignedTo || user?.id;
-      
-      if (!groupId) {
-        throw new Error('Please select a group');
-      }
 
       const caseNumber = formData.caseNumber || generateCaseNumber();
 
@@ -106,7 +84,6 @@ export const CreateClientDialog = ({
           firstName: formData.firstName,
           lastName: formData.lastName,
           role: 'user',
-          groupId,
           createdBy: user?.id,
           assignedTo: assignedTo,
         },
@@ -156,7 +133,6 @@ export const CreateClientDialog = ({
         lastName: '',
         phone: '',
         caseNumber: '',
-        groupId: defaultGroupId || '',
         assignedTo: defaultAssignedTo || '',
       });
       setOpen(false);
@@ -264,26 +240,6 @@ export const CreateClientDialog = ({
               </div>
             </div>
 
-            {groups.length > 0 && !defaultGroupId && (
-              <div className="space-y-2">
-                <Label htmlFor="groupId">{t('admin.group')}</Label>
-                <Select
-                  value={formData.groupId}
-                  onValueChange={(value) => setFormData({ ...formData, groupId: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={t('admin.selectGroup') || 'Select group'} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {groups.map((group) => (
-                      <SelectItem key={group.id} value={group.id}>
-                        {group.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>

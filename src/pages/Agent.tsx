@@ -44,20 +44,10 @@ const Agent = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const deferredSearchTerm = useDeferredValue(searchTerm);
   const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [myGroupId, setMyGroupId] = useState<string | null>(null);
 
   const fetchAgentData = useCallback(async () => {
     setLoading(true);
     try {
-      // Get agent's group
-      const { data: agentProfile } = await supabase
-        .from('profiles')
-        .select('group_id')
-        .eq('id', userId)
-        .single();
-      
-      setMyGroupId(agentProfile?.group_id || null);
-
       // Get assigned customers
       const { data, error } = await supabase
         .from('profiles')
@@ -126,13 +116,10 @@ const Agent = () => {
       onRefresh={handleRefresh}
       isLoading={loading}
       headerActions={
-        myGroupId && (
-          <CreateClientDialog
-            defaultGroupId={myGroupId}
-            defaultAssignedTo={user?.id}
-            onSuccess={fetchAgentData}
-          />
-        )
+        <CreateClientDialog
+          defaultAssignedTo={user?.id}
+          onSuccess={fetchAgentData}
+        />
       }
     >
       {/* Pending Transactions Card - at the top */}
