@@ -28,35 +28,20 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Get user ID from email if provided. Match either the raw email or any
-    // per-platform aliased variant (john+tk@..., john+chargeback@..., john+brightfund@...).
+    // Match only the exact login email; case numbers and brand aliases are
+    // never alternate account identifiers.
     let targetUserId = userId;
     if (!targetUserId && email) {
-      const norm = String(email).trim().toLowerCase();
-      const at = norm.lastIndexOf("@");
-      const localRaw = at > 0 ? norm.slice(0, at).split("+")[0] : norm;
-      const domain = at > 0 ? norm.slice(at + 1) : "";
-      const candidates = new Set<string>([
-        norm,
-        domain ? `${localRaw}@${domain}` : norm,
-        domain ? `${localRaw}+tk@${domain}` : "",
-        domain ? `${localRaw}+chargeback@${domain}` : "",
-        domain ? `${localRaw}+brightfund@${domain}` : "",
-      ]);
-      candidates.delete("");
-
-      const { data: userData, error: userError } = await supabaseAdmin.auth.admin.listUsers();
-      if (userError) {
-        console.error('User lookup error:', userError);
-        throw userError;
-      }
-      const foundUser = userData.users.find(u => u.email && candidates.has(u.email.toLowerCase()));
-      if (!foundUser) {
+      const normalizedEmail = String(email).trim().toLowerCase();
+      const { data: profile, error: lookupError } = await supabaseAdmin
+        .from('profiles').select('id').eq('email', normalizedEmail).maybeSingle();
+      if (lookupError) throw lookupError;
+      if (!profile) {
         return new Response(JSON.stringify({ mfaRequired: false }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
-      targetUserId = foundUser.id;
+      targetUserId = profile.id;
     }
 
     // Check if user is admin or group_admin

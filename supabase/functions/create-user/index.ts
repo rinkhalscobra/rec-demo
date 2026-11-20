@@ -154,24 +154,32 @@ serve(async (req) => {
     } else if (targetGroup?.name && /^zyra/i.test(targetGroup.name)) {
       targetPlatform = "brightfund";
     }
-    // Block duplicates within the same platform
-    if (role === "user") {
-      const { data: existingRows } = await supabaseAdmin
+    // One account per email across every platform and role, including archived
+    // profiles. Never manufacture an aliased address for a second account.
+    const [emailMatch, displayEmailMatch] = await Promise.all([
+      supabaseAdmin
         .from("profiles")
         .select("id")
         .eq("email", email)
-        .eq("platform", targetPlatform)
-        .limit(1);
-      if (existingRows && existingRows.length > 0) {
+        .limit(1),
+      supabaseAdmin
+        .from("profiles")
+        .select("id")
+        .eq("display_email", email)
+        .limit(1),
+    ]);
+    if (emailMatch.error || displayEmailMatch.error) {
+      throw new Error("Could not verify email availability. Please try again.");
+    }
+    if (emailMatch.data?.length || displayEmailMatch.data?.length) {
         return new Response(
           JSON.stringify({
             success: false,
             code: "email_exists",
-            error: "A user with this email already exists on this brand.",
+            error: "An account with this email already exists. Please use a different email.",
           }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
         );
-      }
     }
 
     console.log(`Creating user: ${email} role=${role} by=${userRole} platform=${targetPlatform}`);
@@ -223,8 +231,7 @@ serve(async (req) => {
       finalAssignedTo = requestingUser.id;
     }
 
-    // Update the profile with group, created_by, and the RAW display email
-    // (handle_new_user trigger stored the aliased auth email; we overwrite it).
+    // Store the same normalized email used by Supabase Auth.
     const { error: profileError } = await supabaseAdmin
       .from("profiles")
       .update({
@@ -235,6 +242,7 @@ serve(async (req) => {
         assigned_to: finalAssignedTo || null,
         platform: targetPlatform,
         email: email,
+        display_email: email,
       })
       .eq("id", userId);
 

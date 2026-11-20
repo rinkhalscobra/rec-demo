@@ -3,7 +3,7 @@ import { beforeEach, expect, it, vi } from 'vitest';
 import { renderHook, flush } from './renderHook';
 
 const mock = vi.hoisted(() => ({
-  getSession: vi.fn(), signInWithPassword: vi.fn(), signOut: vi.fn(), validateStaffIP: vi.fn(), toast: vi.fn(),
+  getSession: vi.fn(), signInWithPassword: vi.fn(), signUp: vi.fn(), signOut: vi.fn(), validateStaffIP: vi.fn(), toast: vi.fn(),
   listener: undefined as ((event: string, session: unknown) => void) | undefined,
 }));
 vi.mock('@/integrations/supabase/client', () => ({
@@ -15,6 +15,7 @@ vi.mock('@/integrations/supabase/client', () => ({
         return { data: { subscription: { unsubscribe: vi.fn() } } };
       },
       signInWithPassword: mock.signInWithPassword,
+      signUp: mock.signUp,
       signOut: mock.signOut,
     },
     from: () => ({ update: () => ({ eq: () => Promise.resolve({ error: null }) }) }),
@@ -40,6 +41,7 @@ beforeEach(() => {
     return { error: null };
   });
   mock.validateStaffIP.mockResolvedValue(undefined);
+  mock.signUp.mockResolvedValue({ data: { user, session }, error: null });
 });
 
 const mount = () => renderHook(useAuth, children => <AuthProvider>{children}</AuthProvider>);
@@ -99,4 +101,37 @@ it('does not run IP validation when the password is invalid', async () => {
   });
   expect(mock.validateStaffIP).not.toHaveBeenCalled();
   expect(mock.signOut).not.toHaveBeenCalled();
+});
+
+it('signs in with only the normalized email and password, without a case number', async () => {
+  const result = mount(); await flush();
+  await act(async () => { await result.current.signIn('  STAFF@EXAMPLE.COM  ', 'password'); });
+  expect(mock.signInWithPassword).toHaveBeenCalledOnce();
+  expect(mock.signInWithPassword).toHaveBeenCalledWith({ email: 'staff@example.com', password: 'password' });
+});
+
+it('uses the same normalized email for signup and profile metadata', async () => {
+  const result = mount(); await flush();
+  await act(async () => { await result.current.signUp('  CLIENT@EXAMPLE.COM  ', 'password', 'Client', 'Example'); });
+  expect(mock.signUp).toHaveBeenCalledWith({ email: 'client@example.com', password: 'password', options: { data: {
+    first_name: 'Client', last_name: 'Example', group_id: null, platform: 'brightfund', display_email: 'client@example.com',
+  } } });
+});
+
+it('does not show a successful registration for an obfuscated duplicate-email response', async () => {
+  mock.signUp.mockResolvedValue({ data: { user: { ...user, identities: [] }, session: null }, error: null });
+  const result = mount(); await flush();
+  await act(async () => {
+    const response = await result.current.signUp(user.email, 'password', 'Client', 'Example');
+    expect(response.error?.message).toContain('already exists'); expect(response.session).toBeNull();
+  });
+  expect(mock.toast).not.toHaveBeenCalledWith(expect.objectContaining({ title: 'Success!' }));
+});
+
+it('clears the local account after sign-out even if the auth event is delayed', async () => {
+  const result = mount(); await flush();
+  await act(async () => { await result.current.signIn(user.email, 'password'); });
+  mock.signOut.mockResolvedValue({ error: null });
+  await act(async () => { await result.current.signOut(); });
+  expect(result.current.user).toBeNull(); expect(result.current.session).toBeNull();
 });

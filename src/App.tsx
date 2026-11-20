@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { LanguageProvider } from "@/contexts/LanguageContext";
+import { RequireAuth } from '@/components/auth/RequireAuth';
 const Index = lazy(() => import("./pages/Index"));
 const Auth = lazy(() => import("./pages/Auth"));
 const Cryptocurrencies = lazy(() => import("./pages/Cryptocurrencies"));
@@ -60,11 +61,12 @@ const App = () => (
             <Route path="/watchlist" element={<WatchlistNew />} />
             <Route path="/disclaimer" element={<Disclaimer />} />
             <Route path="/privacy" element={<Privacy />} />
-            <Route path="/admin" element={<Admin />} />
-            <Route path="/group-admin" element={<GroupAdmin />} />
-            <Route path="/supervisor" element={<Supervisor />} />
-            <Route path="/agent" element={<Agent />} />
-            <Route path="/customer/:customerId" element={<CustomerDetail />} />
+            <Route element={<RequireAuth />}>
+            <Route path="/admin" element={<RequireAuth roles={['admin']}><Admin /></RequireAuth>} />
+            <Route path="/group-admin" element={<RequireAuth roles={['group_admin']}><GroupAdmin /></RequireAuth>} />
+            <Route path="/supervisor" element={<RequireAuth roles={['supervisor']}><Supervisor /></RequireAuth>} />
+            <Route path="/agent" element={<RequireAuth roles={['agent']}><Agent /></RequireAuth>} />
+            <Route path="/customer/:customerId" element={<RequireAuth roles={['admin', 'group_admin', 'supervisor', 'agent']}><CustomerDetail /></RequireAuth>} />
             
             {/* Dashboard Routes */}
             <Route element={<CustomerDataOutlet />}>
@@ -77,6 +79,7 @@ const App = () => (
               <Route path="/dashboard/withdraw" element={<WithdrawPage />} />
               <Route path="/dashboard/notifications" element={<NotificationsPage />} />
               <Route path="/dashboard/messages" element={<MessagesPage />} />
+            </Route>
             </Route>
             
             <Route path="/showcase" element={<Showcase />} />

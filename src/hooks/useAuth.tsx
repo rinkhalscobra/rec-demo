@@ -77,6 +77,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   const signUp = async (email: string, password: string, firstName: string, lastName: string, promocode?: string) => {
+    email = email.trim().toLowerCase();
     try {
       let groupId: string | null = null;
       let roleType: AppRole | null = null;
@@ -141,13 +142,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         }
       });
 
-      if (error) {
+      const duplicateError = !data.session && data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0
+        ? new Error('An account with this email already exists. Please sign in.')
+        : null;
+      const signupError = error ?? duplicateError;
+      if (signupError) {
         toast({
           title: "Sign up failed",
-          description: error.message,
+          description: signupError.message,
           variant: "destructive",
         });
-        return { error, session: null };
+        return { error: signupError, session: null };
       }
 
       // If signup successful and we have a promocode, update the profile and increment usage
@@ -200,6 +205,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const signIn = async (email: string, password: string) => {
+    email = email.trim().toLowerCase();
     pendingSignIn.current = true;
     let authenticated = false;
     try {
@@ -240,7 +246,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      toast({ title: "Sign out failed", description: error.message, variant: "destructive" });
+      return;
+    }
+    pendingSignIn.current = false;
+    setSession(null);
+    setUser(null);
     toast({
       title: "Signed out",
       description: "You have been signed out successfully.",

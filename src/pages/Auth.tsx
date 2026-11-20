@@ -95,7 +95,7 @@ const Auth = () => {
     setIsLoading(true);
 
     try {
-      const email = loginEmail.trim();
+      const email = loginEmail.trim().toLowerCase();
       if (await checkMfaRequired(email)) {
         setPendingCredentials({ email, password: loginPassword });
         setShowMfaDialog(true);
@@ -123,7 +123,7 @@ const Auth = () => {
 
     setIsLoading(true);
     try {
-      const email = signupEmail.trim();
+      const email = signupEmail.trim().toLowerCase();
       const { error, session } = await signUp(email, signupPassword, firstName.trim(), lastName.trim());
       if (error) return;
 

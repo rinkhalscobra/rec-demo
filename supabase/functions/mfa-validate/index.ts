@@ -99,22 +99,20 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Get user ID from email if provided
+    // Resolve the exact same normalized email used for password sign-in.
     let targetUserId = userId;
     if (!targetUserId && email) {
-      const { data: userData, error: userError } = await supabaseAdmin.auth.admin.listUsers();
-      if (userError) {
-        console.error('User lookup error:', userError);
-        throw userError;
-      }
-      const foundUser = userData.users.find(u => u.email === email);
-      if (!foundUser) {
+      const normalizedEmail = String(email).trim().toLowerCase();
+      const { data: profile, error: lookupError } = await supabaseAdmin
+        .from('profiles').select('id').eq('email', normalizedEmail).maybeSingle();
+      if (lookupError) throw lookupError;
+      if (!profile) {
         return new Response(JSON.stringify({ error: 'User not found' }), {
           status: 404,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
-      targetUserId = foundUser.id;
+      targetUserId = profile.id;
     }
 
     // Get MFA data
