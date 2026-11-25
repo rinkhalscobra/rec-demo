@@ -1,111 +1,122 @@
-import { useLayoutEffect, useRef, useState } from 'react';
-import { Bitcoin, Landmark, Search, ShieldCheck } from 'lucide-react';
+import { useState, type CSSProperties } from 'react';
+import { Blocks, FileSearch2, Fingerprint, Landmark, Link2, ListChecks, Pause, Play } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import './recovery-investigation.css';
 
 interface InvestigationWorkflowProps {
-  sources: ReadonlyArray<ReadonlyArray<string>>;
   scopeLabel: string;
+  scope: 'both' | 'crypto' | 'bank';
   running: boolean;
   awaitingVerification: boolean;
 }
 
-const desktopPaths = [
-  'M 170 60 H 230 Q 270 60 270 105 V 120 Q 270 150 320 150 H 360',
-  'M 550 60 H 490 Q 450 60 450 105 V 120 Q 450 150 400 150 H 360',
-  'M 170 240 H 230 Q 270 240 270 195 V 180 Q 270 150 320 150 H 360',
-  'M 550 240 H 490 Q 450 240 450 195 V 180 Q 450 150 400 150 H 360',
-];
-const mobilePaths = [
-  'M 96 32 V 85 Q 96 108 135 108 H 170 Q 200 108 200 170',
-  'M 304 32 V 85 Q 304 108 265 108 H 230 Q 200 108 200 170',
-  'M 96 308 V 255 Q 96 232 135 232 H 170 Q 200 232 200 170',
-  'M 304 308 V 255 Q 304 232 265 232 H 230 Q 200 232 200 170',
-];
+const sourceContent = {
+  bank: {
+    icon: Landmark,
+    title: 'Bank transactions',
+    subtitle: 'Accounts · transfers · beneficiaries',
+    records: ['Payment references', 'Sender & beneficiary', 'Dates & settlement records'],
+  },
+  crypto: {
+    icon: Blocks,
+    title: 'Blockchain transactions',
+    subtitle: 'Wallets · transfers · exchanges',
+    records: ['Wallet addresses', 'Transaction hashes', 'Networks & asset movements'],
+  },
+};
 
-export function InvestigationWorkflow({ sources, scopeLabel, running, awaitingVerification }: InvestigationWorkflowProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [wide, setWide] = useState(false);
-  useLayoutEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-    const resize = () => setWide(container.clientWidth >= 560);
-    resize();
-    if (typeof ResizeObserver !== 'undefined') {
-      const observer = new ResizeObserver(resize);
-      observer.observe(container);
-      return () => observer.disconnect();
-    }
-    window.addEventListener('resize', resize);
-    return () => window.removeEventListener('resize', resize);
-  }, []);
-  const activeStep = awaitingVerification ? 2 : running ? 1 : 0;
-  const steps = [
-    ['Source review', `${scopeLabel} within the case scope.`],
-    ['Transaction analysis', 'References and transaction relationships are examined.'],
-    ['Analyst verification', 'Findings are reviewed before they are published.'],
-  ];
+const waveform = [4, 8, 11, 6, 17, 12, 21, 26, 16, 11, 19, 9, 16];
+const stages = ['Review records', 'Trace transfers', 'Cross-check links', 'Analyst review'];
 
-  const paths = (compact: boolean) => (
-    <svg className={compact ? 'investigation-flow-compact' : 'investigation-flow-wide'} viewBox={compact ? '0 0 400 340' : '0 0 720 300'} preserveAspectRatio="none" aria-hidden="true">
-      {(compact ? mobilePaths : desktopPaths).map((path, index) => (
-        <g key={path}>
-          <path d={path} fill="none" stroke="hsl(var(--primary) / 0.25)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
-          {running && (
-            <circle className="investigation-flow-packet" style={{ offsetPath: `path('${path}')`, animationDelay: `${-index * 0.8}s` }} r="5.5" fill="hsl(var(--primary))" stroke="hsl(var(--card))" strokeWidth="2" />
-          )}
-        </g>
-      ))}
-    </svg>
+function SourceCard({ kind }: { kind: 'bank' | 'crypto' }) {
+  const { icon: Icon, title, subtitle, records } = sourceContent[kind];
+  return (
+    <article className={`investigation-source investigation-source-${kind}`} aria-label={title}>
+      <div className="investigation-source-heading">
+        <span className="investigation-source-icon" aria-hidden="true"><Icon size={17} strokeWidth={1.7} /></span>
+        <div><h5>{title}</h5><p>{subtitle}</p></div>
+      </div>
+      <ul className="investigation-records">
+        {records.map(record => <li key={record}><span aria-hidden="true" />{record}</li>)}
+      </ul>
+    </article>
   );
+}
+
+function Connectors({ scope }: { scope: InvestigationWorkflowProps['scope'] }) {
+  const paths = scope === 'both' ? [
+    { kind: 'bank', path: 'M 256 100 H 288 Q 307 100 307 120 V 168 Q 307 188 327 188 H 363' },
+    { kind: 'crypto', path: 'M 256 320 H 287 Q 307 320 307 300 V 252 Q 307 232 327 232 H 363' },
+  ] : [{ kind: scope, path: 'M 256 210 H 363' }];
+  paths.push({ kind: 'evidence', path: 'M 575 210 H 668' });
 
   return (
-    <div className="investigation-workflow overflow-hidden rounded-xl border border-border bg-card">
-      <div className="flex flex-col gap-2 border-b border-border px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
-        <div>
-          <h4 className="text-base font-semibold tracking-tight text-foreground">Investigation workflow</h4>
-          <p className="mt-1 text-xs text-muted-foreground">From transaction records to verified findings</p>
+    <svg className="investigation-connectors" viewBox="0 0 900 420" preserveAspectRatio="none" aria-hidden="true">
+      {paths.map(({ kind, path }, index) => <g key={kind} className={`investigation-link investigation-link-${kind}`}>
+        <path className="investigation-link-track" d={path} vectorEffect="non-scaling-stroke" />
+        <path className="investigation-signal" d={path} pathLength="100" vectorEffect="non-scaling-stroke" style={{ '--signal-delay': `${index * -.8}s` } as CSSProperties} />
+      </g>)}
+      {scope === 'both' && <g className="investigation-junction"><circle cx="307" cy="210" r="5" /><circle cx="307" cy="210" r="1.8" /></g>}
+    </svg>
+  );
+}
+
+export function InvestigationWorkflow({ scopeLabel, scope, running, awaitingVerification }: InvestigationWorkflowProps) {
+  const [paused, setPaused] = useState(false);
+  const activeStage = awaitingVerification ? 3 : running ? 2 : 0;
+
+  return (
+    <figure className="investigation-workflow" data-running={running} data-paused={paused} aria-label={`Investigation workflow: ${scopeLabel}`}>
+      <figcaption className="sr-only">Illustration of available transaction records flowing into analysis and case evidence for analyst review.</figcaption>
+      {running && <button
+        type="button"
+        className="investigation-motion-control"
+        onClick={() => setPaused(value => !value)}
+        aria-label={paused ? 'Play workflow animation' : 'Pause workflow animation'}
+        aria-pressed={paused}
+        title={paused ? 'Play animation' : 'Pause animation'}
+      >{paused ? <Play size={14} aria-hidden="true" /> : <Pause size={14} aria-hidden="true" />}</button>}
+
+      <div className="investigation-diagram">
+        <Connectors scope={scope} />
+        <div className="investigation-source-group" data-single={scope !== 'both'}>
+          {scope !== 'crypto' && <SourceCard kind="bank" />}
+          {scope !== 'bank' && <SourceCard kind="crypto" />}
         </div>
-        <span className="w-fit rounded-full border border-border bg-muted/40 px-3 py-1 text-xs text-muted-foreground">{scopeLabel}</span>
-      </div>
 
-      <div className="grid gap-5 p-4 sm:p-5 lg:grid-cols-[minmax(220px,0.8fr)_minmax(0,1.6fr)] lg:gap-8">
-        <ol className="order-2 flex flex-col justify-center lg:order-1">
-          {steps.map(([title, description], index) => (
-            <li key={title} className="relative flex gap-3 pb-6 last:pb-0" aria-current={index === activeStep ? 'step' : undefined}>
-              {index < steps.length - 1 && <span className="absolute bottom-0 left-4 top-8 w-px bg-border" aria-hidden="true" />}
-              <span className={cn('relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-xs font-semibold tabular-nums', index === activeStep ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-card text-muted-foreground')} aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
-              <div className="min-w-0 pt-1">
-                <p className={cn('text-sm font-semibold', index === activeStep ? 'text-primary' : 'text-foreground')}>{title}</p>
-                <p className="mt-1 max-w-xs text-xs leading-relaxed text-muted-foreground">{description}</p>
-                {index === activeStep && <span className="mt-2 inline-block rounded-md bg-accent px-2 py-1 text-xs font-medium text-primary">{awaitingVerification ? 'Awaiting verification' : running ? 'In progress' : 'Scheduled'}</span>}
-              </div>
-            </li>
-          ))}
-        </ol>
-
-        <div ref={containerRef} className="investigation-flow-container order-1 min-w-0 lg:order-2">
-          <div className="investigation-flow-canvas" role="img" aria-label={running ? 'Animated flow of evidence sources into case analysis' : 'Evidence sources connected to case analysis'}>
-            {paths(!wide)}
-            {sources.map(([title], index) => {
-              const banking = /Bank|Institution|Payment|Cross-border/.test(title);
-              const SourceIcon = banking ? Landmark : Bitcoin;
-              return (
-                <div key={title} className={`investigation-flow-source investigation-flow-source-${index}`}>
-                  <span className="investigation-flow-source-icon" aria-hidden="true"><SourceIcon className="h-4 w-4" /></span>
-                  <span>{title}</span>
-                </div>
-              );
-            })}
-            <div className="investigation-flow-hub">
-              <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground" aria-hidden="true">{awaitingVerification ? <ShieldCheck className="h-5 w-5" /> : <Search className="h-5 w-5" />}</span>
-              <span className="text-sm font-semibold text-foreground">Case analysis</span>
-              <span className="text-xs text-primary">{awaitingVerification ? 'Verification pending' : running ? 'Tracing evidence' : 'Review scheduled'}</span>
-            </div>
+        <div className="investigation-analysis">
+          <div className="investigation-radar" aria-hidden="true">
+            <span className="investigation-radar-axis investigation-radar-axis-x" />
+            <span className="investigation-radar-axis investigation-radar-axis-y" />
+            <span className="investigation-radar-ring" />
+            <span className="investigation-radar-sweep" />
+            {[0, 1, 2].map(index => <span className={`investigation-radar-blip investigation-radar-blip-${index}`} key={index} />)}
+            <span className="investigation-fingerprint"><Fingerprint size={29} strokeWidth={1.8} /></span>
           </div>
-          <p className="mt-3 text-center text-xs text-muted-foreground">Evidence sources connected to your case review</p>
+          <h5>{awaitingVerification ? 'Analyst verification' : 'Transaction analysis'}</h5>
+          <p>{awaitingVerification ? 'Evidence ready for review' : running ? 'Trace · compare · connect' : 'Review scheduled'}</p>
+          <div className="investigation-waveform" aria-hidden="true">
+            {waveform.map((height, index) => <span key={index} style={{ height, '--bar-delay': `${index * -.13}s` } as CSSProperties} />)}
+          </div>
         </div>
+
+        <article className="investigation-evidence">
+          <span className="investigation-evidence-icon" aria-hidden="true"><FileSearch2 size={21} strokeWidth={1.7} /></span>
+          <h5>Case evidence</h5>
+          <p>Linked records for analyst review</p>
+          <ul>
+            <li><Link2 size={15} aria-hidden="true" />Transfer relationships</li>
+            <li><ListChecks size={15} aria-hidden="true" />Supporting references</li>
+          </ul>
+        </article>
       </div>
-    </div>
+
+      <ol className="investigation-stages" aria-label="Investigation stages">
+        {stages.map((title, index) => <li key={title} className={cn(index === activeStage && 'investigation-stage-active', index < activeStage && 'investigation-stage-previous')} aria-current={index === activeStage ? 'step' : undefined}>
+          <div className="investigation-stage-label"><span className="investigation-stage-number" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span><span>{title}</span></div>
+          <span className="investigation-stage-track" aria-hidden="true"><span /></span>
+        </li>)}
+      </ol>
+    </figure>
   );
 }

@@ -1,0 +1,10 @@
+/* Two equal-width quote groups make one seamless, transform-only loop. */
+@keyframes crypto-ticker-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+.crypto-ticker-track {
+  animation: crypto-ticker-scroll 50s linear infinite !important;
+  animation-play-state: running !important;
+}

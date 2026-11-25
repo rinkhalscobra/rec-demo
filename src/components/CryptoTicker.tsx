@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { TrendingUp, TrendingDown } from "lucide-react";
 import { getCryptoQuotes, formatPrice, formatPercentChange, TOP_CRYPTO_SYMBOLS, CRYPTO_NAMES } from "@/services/marketDataApi";
 import { cn } from "@/lib/utils";
+import './crypto-ticker.css';
 
 interface TickerItem {
   symbol: string;
@@ -48,11 +49,11 @@ const CryptoTicker = ({ className }: CryptoTickerProps) => {
   if (tickerData.length === 0) return null;
 
   return (
-    <div className={cn("bg-transparent overflow-hidden", className)}>
-      <div className="flex animate-scroll py-3">
-        <div className="flex shrink-0 gap-10 px-4">
-          {[...tickerData, ...tickerData].map((item, index) => (
-            <div key={index} className="flex items-center gap-3 text-sm whitespace-nowrap">
+    <div role="region" aria-label="Cryptocurrency prices" className={cn("bg-transparent overflow-hidden px-4", className)}>
+      <div className="crypto-ticker-track flex w-max py-3">
+        {[0, 1].map(copy => <div key={copy} className="crypto-ticker-group flex shrink-0 gap-10 pr-10" aria-hidden={copy === 1 ? true : undefined}>
+          {tickerData.map(item => (
+            <div key={item.symbol} className="flex items-center gap-3 text-sm whitespace-nowrap">
               <div className="w-6 h-6 bg-primary/20 rounded-full flex items-center justify-center text-xs font-bold">
                 {item.symbol.charAt(0)}
               </div>
@@ -60,14 +61,14 @@ const CryptoTicker = ({ className }: CryptoTickerProps) => {
                 <span className="font-medium">{item.symbol}</span>
                 <span className="text-muted-foreground ml-1 text-xs">{item.name}</span>
               </div>
-              <span className="font-semibold">{formatPrice(item.price)}</span>
-              <span className={`flex items-center gap-0.5 ${item.change >= 0 ? 'text-success' : 'text-destructive'}`}>
+              <span className="font-semibold tabular-nums">{formatPrice(item.price)}</span>
+              <span className={`flex items-center gap-0.5 tabular-nums ${item.change >= 0 ? 'text-success' : 'text-destructive'}`}>
                 {item.change >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
                 {formatPercentChange(item.change)}
               </span>
             </div>
           ))}
-        </div>
+        </div>)}
       </div>
     </div>
   );

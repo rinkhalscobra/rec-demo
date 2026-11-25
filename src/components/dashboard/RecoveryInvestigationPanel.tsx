@@ -34,27 +34,6 @@ interface RecoveryInvestigationPanelProps extends RecoveryInvestigationData {
 
 type DetailRecord = Record<string, string>;
 
-const searchEvents = {
-  both: [
-    ['Blockchain intelligence', 'Tracing cross-network transaction paths'],
-    ['Banking reference index', 'Correlating transfer identifiers'],
-    ['Address attribution', 'Reviewing wallet relationships'],
-    ['Institutional records', 'Matching beneficiary information'],
-  ],
-  crypto: [
-    ['Bitcoin network', 'Following transaction outputs'],
-    ['Ethereum network', 'Resolving contract interactions'],
-    ['Address attribution', 'Reviewing wallet relationships'],
-    ['Exchange endpoints', 'Correlating destination services'],
-  ],
-  bank: [
-    ['Banking reference index', 'Correlating transfer identifiers'],
-    ['Payment rails', 'Reviewing routing information'],
-    ['Institutional records', 'Matching beneficiary information'],
-    ['Cross-border network', 'Following intermediary institutions'],
-  ],
-};
-
 const resultLabels: Record<string, string> = {
   amount: 'Identified amount',
   currency: 'Currency',
@@ -163,7 +142,7 @@ export const RecoveryInvestigationPanel = ({
         </div>
 
         <div className="space-y-5 p-4 sm:p-6">
-          <InvestigationWorkflow sources={searchEvents[scope]} scopeLabel={scopeLabel} running={hasStartTime && !windowComplete} awaitingVerification={windowComplete} />
+          <InvestigationWorkflow scopeLabel={scopeLabel} scope={scope} running={hasStartTime && !windowComplete} awaitingVerification={windowComplete} />
           <div className="space-y-3 rounded-lg bg-muted/50 p-4">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-2 text-sm font-medium text-foreground">
